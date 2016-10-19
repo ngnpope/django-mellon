@@ -351,7 +351,7 @@ class LoginView(ProfileMixin, LogMixin, View):
         return_url = request.build_absolute_uri()
         return_url += '&' if '?' in return_url else '?'
         return_url += 'nodisco=1'
-        url = app_settings.DISCOVERY_SERVICE_URL
+        url = resolve_url(app_settings.DISCOVERY_SERVICE_URL)
         params = {
             # prevent redirect loops with the discovery service
             'entityID': request.build_absolute_uri(reverse('mellon_metadata')),
