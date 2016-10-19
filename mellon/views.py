@@ -312,7 +312,7 @@ class LoginView(ProfileMixin, LogMixin, View):
 
     def request_discovery_service(self, request, is_passive=False):
         self_url = request.build_absolute_uri(request.path)
-        url = app_settings.DISCOVERY_SERVICE_URL
+        url = resolve_url(app_settings.DISCOVERY_SERVICE_URL)
         params = {
             # prevent redirect loops with the discovery service
             'nodisco': '1',
