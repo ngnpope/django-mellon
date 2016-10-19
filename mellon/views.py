@@ -137,12 +137,12 @@ class LoginView(ProfileMixin, LogMixin, View):
     def get_idp(self, request):
         entity_id = request.POST.get('entityID') or request.GET.get('entityID')
         if not entity_id:
-            for idp in utils.get_idps():
+            for idp in utils.get_idps(request):
                 return idp
             else:
                 return {}
         else:
-            return utils.get_idp(entity_id)
+            return utils.get_idp(request, entity_id)
 
     def post(self, request, *args, **kwargs):
         '''Assertion consumer'''
@@ -180,7 +180,7 @@ class LoginView(ProfileMixin, LogMixin, View):
     def sso_failure(self, request, reason='', status_codes=()):
         '''show error message to user after a login failure'''
         login = self.profile
-        idp = utils.get_idp(login.remoteProviderId)
+        idp = utils.get_idp(request, login.remoteProviderId)
         if not idp:
             self.log.warning('entity id %r is unknown', login.remoteProviderId)
             return HttpResponseBadRequest(
@@ -314,7 +314,7 @@ class LoginView(ProfileMixin, LogMixin, View):
             self.log.warning('no entity id found for artifact %s', artifact)
             return HttpResponseBadRequest(
                 'no entity id found for this artifact %r' % artifact)
-        idp = utils.get_idp(login.remoteProviderId)
+        idp = utils.get_idp(request, login.remoteProviderId)
         if not idp:
             return HttpResponseBadRequest(
                 'entity id %r is unknown' % login.remoteProviderId)

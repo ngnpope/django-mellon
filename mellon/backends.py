@@ -30,7 +30,7 @@ class SAMLBackend(ModelBackend):
         if 'issuer' not in saml_attributes:
             logger.debug('no idp in saml_attributes')
             return None
-        idp = utils.get_idp(saml_attributes['issuer'])
+        idp = utils.get_idp(entity_id=saml_attributes['issuer'])
         if not idp:
             logger.debug('unknown idp %s', saml_attributes['issuer'])
             return None

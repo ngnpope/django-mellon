@@ -101,7 +101,7 @@ def create_server(request):
                 password = key[1]
                 key = key[0]
             server.setEncryptionPrivateKeyWithPassword(key, password)
-        for idp in get_idps():
+        for idp in get_idps(request):
             if idp and idp.get('METADATA'):
                 try:
                     server.addProviderFromBuffer(lasso.PROVIDER_ROLE_IDP, idp['METADATA'])
@@ -120,19 +120,19 @@ def create_login(request):
     return login
 
 
-def get_idp(entity_id):
+def get_idp(request=None, entity_id=None):
     for adapter in get_adapters():
         if hasattr(adapter, 'get_idp'):
-            idp = adapter.get_idp(entity_id)
+            idp = adapter.get_idp(request, entity_id)
             if idp:
                 return idp
     return None
 
 
-def get_idps():
+def get_idps(request=None):
     for adapter in get_adapters():
         if hasattr(adapter, 'get_idps'):
-            for idp in adapter.get_idps():
+            for idp in adapter.get_idps(request):
                 yield idp
 
 

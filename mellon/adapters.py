@@ -58,10 +58,10 @@ def display_truncated_list(l, max_length=10):
 
 
 class DefaultAdapter(object):
-    def get_idp(self, entity_id):
+    def get_idp(self, request=None, entity_id=None):
         '''Find the first IdP definition matching entity_id'''
-        for idp in self.get_idps():
-            if entity_id.lower() == idp['ENTITY_ID'].lower():
+        for idp in self.get_idps(request):
+            if entity_id and entity_id.lower() == idp['ENTITY_ID'].lower():
                 return idp
 
     def get_identity_providers_setting(self):
@@ -70,7 +70,7 @@ class DefaultAdapter(object):
     def get_users_queryset(self, idp, saml_attributes):
         return User.objects.all()
 
-    def get_idps(self):
+    def get_idps(self, request=None):
         for i, idp in enumerate(self.get_identity_providers_setting()):
             if self.load_idp(idp, i):
                 yield idp
