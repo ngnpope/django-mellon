@@ -102,7 +102,7 @@ def get_idp(entity_id):
             idp = adapter.get_idp(entity_id)
             if idp:
                 return idp
-    return {}
+    return None
 
 
 def get_idps():
