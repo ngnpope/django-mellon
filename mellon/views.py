@@ -337,7 +337,7 @@ class LoginView(ProfileMixin, LogMixin, View):
 
         next_url = request.GET.get(REDIRECT_FIELD_NAME)
         idp = self.get_idp(request)
-        if idp is None:
+        if not idp:
             return HttpResponseBadRequest('no idp found')
         self.profile = login = utils.create_login(request)
         self.log.debug('authenticating to %r', idp['ENTITY_ID'])
