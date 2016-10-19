@@ -8,7 +8,7 @@ class SAMLBackend(ModelBackend):
         # without an issuer we can do nothing
         if not 'issuer' in saml_attributes:
             return
-        idp = utils.get_idp(saml_attributes['issuer'])
+        idp = utils.get_idp(entity_id=saml_attributes['issuer'])
         adapters = utils.get_adapters(idp)
         for adapter in adapters:
             if not hasattr(adapter, 'authorize'):

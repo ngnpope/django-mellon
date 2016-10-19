@@ -21,16 +21,16 @@ class DefaultAdapter(object):
     def __init__(self, *args, **kwargs):
         self.logger = logging.getLogger(__name__)
 
-    def get_idp(self, entity_id):
+    def get_idp(self, request=None, entity_id=None):
         '''Find the first IdP definition matching entity_id'''
-        for idp in self.get_idps():
-            if entity_id.lower() == idp['ENTITY_ID'].lower():
+        for idp in self.get_idps(request):
+            if entity_id and entity_id.lower() == idp['ENTITY_ID'].lower():
                 return idp
 
     def get_identity_providers_setting(self):
         return app_settings.IDENTITY_PROVIDERS
 
-    def get_idps(self):
+    def get_idps(self, request=None):
         for i, idp in enumerate(self.get_identity_providers_setting()):
             if 'METADATA_URL' in idp and 'METADATA' not in idp:
                 verify_ssl_certificate = utils.get_setting(
