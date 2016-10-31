@@ -16,7 +16,7 @@ from . import app_settings
 
 
 def create_metadata(request):
-    entity_id = reverse('mellon_metadata')
+    entity_id = request.build_absolute_uri(reverse('mellon_metadata'))
     cache = getattr(settings, '_MELLON_METADATA_CACHE', {})
     if not entity_id in cache:
         login_url = reverse(app_settings.LOGIN_URL)
@@ -29,7 +29,7 @@ def create_metadata(request):
             public_keys.append(public_key)
         name_id_formats = app_settings.NAME_ID_FORMATS
         cache[entity_id] = render_to_string('mellon/metadata.xml', {
-            'entity_id': request.build_absolute_uri(entity_id),
+            'entity_id': entity_id,
             'login_url': request.build_absolute_uri(login_url),
             'logout_url': request.build_absolute_uri(logout_url),
             'public_keys': public_keys,
