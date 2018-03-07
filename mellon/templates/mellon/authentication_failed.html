@@ -12,7 +12,7 @@
   <h2 class="mellon-message-header">{% trans "Authentication failed" %}</h2>
   <p class="mellon-message-body">
     {% blocktrans %}The authentication has failed.{% endblocktrans %}
-    {% if idp_message %}<p class="mellon-idp-message">{% trans "Reason" %}&nbsp;: {{ idp_message }}</p>{% endif %}
+    {% if reason %}<p class="mellon-reason">{% trans "Reason" %}&nbsp;: {{ reason }}</p>{% endif %}
   </p>
   <p class="mellon-message-continue">
     <a class="mellon-link" href="{{ next_url }}">{% trans "Continue" %}</a>

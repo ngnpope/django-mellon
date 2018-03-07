@@ -1,3 +1,4 @@
+import re
 import base64
 import zlib
 
@@ -129,7 +130,7 @@ def test_sso_slo(db, app, idp, caplog, sp_settings):
     response = app.post(reverse('mellon_login'), params={'SAMLResponse': body, 'RelayState': relay_state})
     assert 'created new user' in caplog.text
     assert 'logged in using SAML' in caplog.text
-    assert response['Location'].endswith('/whatever/')
+    assert urlparse.urlparse(response['Location']).path == '/whatever/'
 
 
 def test_sso(db, app, idp, caplog, sp_settings):
@@ -140,7 +141,7 @@ def test_sso(db, app, idp, caplog, sp_settings):
     response = app.post(reverse('mellon_login'), params={'SAMLResponse': body, 'RelayState': relay_state})
     assert 'created new user' in caplog.text
     assert 'logged in using SAML' in caplog.text
-    assert response['Location'].endswith(sp_settings.LOGIN_REDIRECT_URL)
+    assert urlparse.urlparse(response['Location']).path == sp_settings.LOGIN_REDIRECT_URL
 
 
 def test_sso_request_denied(db, app, idp, caplog, sp_settings):
@@ -173,16 +174,16 @@ def test_sso_artifact(db, app, caplog, sp_settings, idp_metadata, idp_private_ke
         response = app.get(acs_artifact_url, params={'RelayState': relay_state})
     assert 'created new user' in caplog.text
     assert 'logged in using SAML' in caplog.text
-    assert response['Location'].endswith('/whatever/')
-    # force delog
+    assert urlparse.urlparse(response['Location']).path == '/whatever/'
+    # force delog, but keep session information for relaystate handling
+    assert app.session
     del app.session['_auth_user_id']
     assert 'dead artifact' not in caplog.text
     with HTTMock(idp.mock_artifact_resolver()):
         response = app.get(acs_artifact_url, params={'RelayState': relay_state})
     # verify retry login was asked
     assert 'dead artifact' in caplog.text
-    assert response.status_code == 302
-    assert reverse('mellon_login') in url
+    assert urlparse.urlparse(response['Location']).path == reverse('mellon_login')
     response = response.follow()
     url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
     assert relay_state
@@ -197,7 +198,7 @@ def test_sso_artifact(db, app, caplog, sp_settings, idp_metadata, idp_private_ke
         response = app.get(acs_artifact_url, params={'RelayState': relay_state})
     assert 'created new user' in caplog.text
     assert 'logged in using SAML' in caplog.text
-    assert response['Location'].endswith('/whatever/')
+    assert urlparse.urlparse(response['Location']).path == '/whatever/'
 
 
 def test_sso_slo_pass_next_url(db, app, idp, caplog, sp_settings):
@@ -210,3 +211,53 @@ def test_sso_slo_pass_next_url(db, app, idp, caplog, sp_settings):
     assert 'created new user' in caplog.text
     assert 'logged in using SAML' in caplog.text
     assert response['Location'].endswith('/whatever/')
+
+
+def test_sso_artifact_no_loop(db, app, caplog, sp_settings, idp_metadata, idp_private_key, rf):
+    sp_settings.MELLON_DEFAULT_ASSERTION_CONSUMER_BINDING = 'artifact'
+    request = rf.get('/')
+    sp_metadata = create_metadata(request)
+    idp = MockIdp(idp_metadata, idp_private_key, sp_metadata)
+    response = app.get(reverse('mellon_login'))
+    url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
+    assert body is None
+    assert reverse('mellon_login') in url
+    assert 'SAMLart' in url
+    acs_artifact_url = url.split('testserver', 1)[1]
+
+    # forget the artifact
+    idp.artifact = ''
+
+    with HTTMock(idp.mock_artifact_resolver()):
+        response = app.get(acs_artifact_url)
+    assert 'MELLON_RETRY_LOGIN=1;' in response['Set-Cookie']
+
+    # first error, we retry
+    assert urlparse.urlparse(response['Location']).path == reverse('mellon_login')
+
+    # check we are not logged
+    assert not app.session
+
+    # redo
+    response = app.get(reverse('mellon_login'))
+    url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
+    assert body is None
+    assert reverse('mellon_login') in url
+    assert 'SAMLart' in url
+    acs_artifact_url = url.split('testserver', 1)[1]
+
+    # forget the artifact
+    idp.artifact = ''
+    with HTTMock(idp.mock_artifact_resolver()):
+        response = app.get(acs_artifact_url)
+
+    # check cookie is deleted after failed retry
+    # Py3-Dj111 variation
+    assert re.match(r'.*MELLON_RETRY_LOGIN=("")?;', response['Set-Cookie'])
+    assert 'Location' not in response
+
+    # check we are still not logged
+    assert not app.session
+
+    # check return url is in page
+    assert '"%s"' % sp_settings.LOGIN_REDIRECT_URL in response.text

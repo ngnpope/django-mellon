@@ -21,6 +21,7 @@ from django.utils.translation import ugettext as _
 
 from . import app_settings, utils
 
+RETRY_LOGIN_COOKIE = 'MELLON_RETRY_LOGIN'
 
 lasso.setFlag('thin-sessions')
 
@@ -133,24 +134,24 @@ class LoginView(ProfileMixin, LogMixin, View):
             if 'RelayState' in request.POST and utils.is_nonnull(request.POST['RelayState']):
                 login.msgRelayState = request.POST['RelayState']
             return self.sso_success(request, login)
-        return self.sso_failure(request, login, idp_message, status_codes)
+        return self.sso_failure(request, reason=idp_message, status_codes=status_codes)
 
-    def sso_failure(self, request, login, idp_message, status_codes):
+    def sso_failure(self, request, reason='', status_codes=()):
         '''show error message to user after a login failure'''
+        login = self.profile
         idp = utils.get_idp(login.remoteProviderId)
         error_url = utils.get_setting(idp, 'ERROR_URL')
         error_redirect_after_timeout = utils.get_setting(idp, 'ERROR_REDIRECT_AFTER_TIMEOUT')
         if error_url:
             error_url = resolve_url(error_url)
-        next_url = error_url or resolve_url(settings.LOGIN_REDIRECT_URL)
+        next_url = error_url or self.get_next_url(default=resolve_url(settings.LOGIN_REDIRECT_URL))
         return render(request, 'mellon/authentication_failed.html',
                       {
                           'debug': settings.DEBUG,
-                          'idp_message': idp_message,
+                          'reason': reason,
                           'status_codes': status_codes,
                           'issuer': login.remoteProviderId,
                           'next_url': next_url,
-                          'error_url': error_url,
                           'relaystate': login.msgRelayState,
                           'error_redirect_after_timeout': error_redirect_after_timeout,
                       })
@@ -193,7 +194,9 @@ class LoginView(ProfileMixin, LogMixin, View):
                 attributes['authn_context_class_ref'] = \
                     authn_context.authnContextClassRef
         self.log.debug('trying to authenticate with attributes %r', attributes)
-        return self.authenticate(request, login, attributes)
+        response = self.authenticate(request, login, attributes)
+        response.delete_cookie(RETRY_LOGIN_COOKIE)
+        return response
 
     def authenticate(self, request, login, attributes):
         user = auth.authenticate(saml_attributes=attributes)
@@ -224,12 +227,23 @@ class LoginView(ProfileMixin, LogMixin, View):
         return HttpResponseRedirect(next_url)
 
     def retry_login(self):
-        '''Retry login if it failed for a temporary error'''
+        '''Retry login if it failed for a temporary error.
+
+           Use a cookie to prevent looping forever.
+        '''
+        if RETRY_LOGIN_COOKIE in self.request.COOKIES:
+            response = self.sso_failure(
+                self.request,
+                reason=_('There were too many redirections with the identity provider.'))
+            response.delete_cookie(RETRY_LOGIN_COOKIE)
+            return response
         url = reverse('mellon_login')
         next_url = self.get_next_url()
         if next_url:
             url = '%s?%s' % (url, urlencode({REDIRECT_FIELD_NAME: next_url}))
-        return HttpResponseRedirect(url)
+        response = HttpResponseRedirect(url)
+        response.set_cookie(RETRY_LOGIN_COOKIE, value='1', max_age=None)
+        return response
 
     def continue_sso_artifact(self, request, method):
         idp_message = None
@@ -271,12 +285,13 @@ class LoginView(ProfileMixin, LogMixin, View):
                                    verify=verify_ssl_certificate)
         except RequestException as e:
             self.log.warning('unable to reach %r: %s', login.msgUrl, e)
-            return self.sso_failure(request, login, _('IdP is temporarily down, please try again '
-                                                      'later.'), status_codes)
+            return self.sso_failure(request,
+                                    reason=_('IdP is temporarily down, please try again ' 'later.'),
+                                    status_codes=status_codes)
         if result.status_code != 200:
             self.log.warning('SAML authentication failed: IdP returned %s when given artifact: %r',
                              result.status_code, result.content)
-            return self.sso_failure(request, login, idp_message, status_codes)
+            return self.sso_failure(request, reason=idp_message, status_codes=status_codes)
 
         self.log.info('Got SAML Artifact Response', extra={'saml_response': result.content})
         result.encoding = utils.get_xml_encoding(result.content)
@@ -318,7 +333,7 @@ class LoginView(ProfileMixin, LogMixin, View):
             return HttpResponseBadRequest('error processing the authentication response: %r' % e)
         else:
             return self.sso_success(request, login)
-        return self.sso_failure(request, login, idp_message, status_codes)
+        return self.sso_failure(request, login, reason=idp_message, status_codes=status_codes)
 
     def request_discovery_service(self, request, is_passive=False):
         self_url = request.build_absolute_uri(request.path)
