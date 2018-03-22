@@ -348,12 +348,12 @@ class LoginView(ProfileMixin, LogMixin, View):
         return self.sso_failure(request, login, reason=idp_message, status_codes=status_codes)
 
     def request_discovery_service(self, request, is_passive=False):
-        self_url = request.build_absolute_uri(request.path)
+        self_url = request.build_absolute_uri() + '&nodisco=1'
         url = app_settings.DISCOVERY_SERVICE_URL
         params = {
             # prevent redirect loops with the discovery service
             'entityID': request.build_absolute_uri(reverse('mellon_metadata')),
-            'return': self_url + '?nodisco=1',
+            'return': self_url,
         }
         if is_passive:
             params['isPassive'] = 'true'
