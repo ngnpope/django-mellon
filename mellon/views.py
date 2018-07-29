@@ -142,7 +142,7 @@ class LoginView(ProfileMixin, LogMixin, View):
         error_redirect_after_timeout = utils.get_setting(idp, 'ERROR_REDIRECT_AFTER_TIMEOUT')
         if error_url:
             error_url = resolve_url(error_url)
-        next_url = error_url or login.msgRelayState or resolve_url(settings.LOGIN_REDIRECT_URL)
+        next_url = error_url or resolve_url(settings.LOGIN_REDIRECT_URL)
         return render(request, 'mellon/authentication_failed.html',
                       {
                           'debug': settings.DEBUG,
