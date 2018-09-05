@@ -153,7 +153,6 @@ def test_create_metadata(rf, private_settings, caplog):
            ('/ds:X509Certificate[text()=\'xxx\']', 1),
            ('/ds:X509Certificate[text()=\'yyy\']', 1)))),
         namespaces=ns)
-    assert metadata is create_metadata(request)
 
 
 def test_iso8601_to_datetime(private_settings):
