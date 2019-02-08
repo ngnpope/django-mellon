@@ -3,9 +3,11 @@ Maintainer: Entr'ouvert <info@entrouvert.com>
 Section: python
 Priority: optional
 Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.7), debhelper (>= 7.4.3),
- python-django (>= 1.5)
+ python-django (>= 1.5), dh-python, python3-all, python3-setuptools, python3-django,
+ python-lasso, python3-lasso
 Standards-Version: 3.9.1
 X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
 
 Package: python-django-mellon
 Architecture: all
@@ -17,3 +19,10 @@ Depends: ${misc:Depends}, ${python:Depends},
 Breaks: python-hobo (<< 0.34.5)
 Description: SAML authentication for Django
 
+Package: python3-django-mellon
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends},
+    python3-django (>= 1.5),
+    python3-isodate,
+    python3-lasso
+Description: SAML authentication for Django
