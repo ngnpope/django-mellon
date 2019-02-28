@@ -253,3 +253,13 @@ def get_xml_encoding(content):
     parser.XmlDeclHandler = xmlDeclHandler
     parser.Parse(content, True)
     return xml_encoding
+
+
+def get_local_path(request, url):
+    if not url:
+        return
+    parsed = urlparse(url)
+    path = parsed.path
+    if request.META.get('SCRIPT_NAME'):
+        path = path[len(request.META['SCRIPT_NAME']):]
+    return path

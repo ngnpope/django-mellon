@@ -38,6 +38,7 @@ class AppSettings(object):
         'LOGIN_URL': 'mellon_login',
         'LOGOUT_URL': 'mellon_logout',
         'ARTIFACT_RESOLVE_TIMEOUT': 10.0,
+        'LOGIN_HINTS': [],
     }
 
     @property

@@ -1,6 +1,7 @@
 import re
 import base64
 import zlib
+import xml.etree.ElementTree as ET
 
 import lasso
 
@@ -261,3 +262,30 @@ def test_sso_artifact_no_loop(db, app, caplog, sp_settings, idp_metadata, idp_pr
 
     # check return url is in page
     assert '"%s"' % sp_settings.LOGIN_REDIRECT_URL in response.text
+
+
+def test_sso_slo_pass_login_hints_always_backoffice(db, app, idp, caplog, sp_settings):
+    sp_settings.MELLON_LOGIN_HINTS = ['always_backoffice']
+    response = app.get(reverse('mellon_login') + '?next=/whatever/')
+    url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
+    root = ET.fromstring(idp.request)
+    login_hints = root.findall('.//{https://www.entrouvert.com/}login-hint')
+    assert len(login_hints) == 1, 'missing login hint'
+    assert login_hints[0].text == 'backoffice', 'login hint is not backoffice'
+
+
+def test_sso_slo_pass_login_hints_backoffice(db, app, idp, caplog, sp_settings):
+    sp_settings.MELLON_LOGIN_HINTS = ['backoffice']
+    response = app.get(reverse('mellon_login') + '?next=/whatever/')
+    url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
+    root = ET.fromstring(idp.request)
+    login_hints = root.findall('.//{https://www.entrouvert.com/}login-hint')
+    assert len(login_hints) == 0
+
+    for next_url in ['/manage/', '/admin/', '/manager/']:
+        response = app.get(reverse('mellon_login') + '?next=%s' % next_url)
+        url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
+        root = ET.fromstring(idp.request)
+        login_hints = root.findall('.//{https://www.entrouvert.com/}login-hint')
+        assert len(login_hints) == 1, 'missing login hint'
+        assert login_hints[0].text == 'backoffice', 'login hint is not backoffice'

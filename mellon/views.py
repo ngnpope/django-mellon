@@ -4,6 +4,8 @@ import lasso
 import uuid
 from requests.exceptions import RequestException
 from xml.sax.saxutils import escape
+import xml.etree.ElementTree as ET
+
 
 from django.core.urlresolvers import reverse
 from django.views.generic import View
@@ -32,6 +34,9 @@ else:
     def lasso_decode(x):
         return x.decode('utf-8')
 
+EO_NS = 'https://www.entrouvert.com/'
+LOGIN_HINT = '{%s}login-hint' % EO_NS
+
 
 class LogMixin(object):
     """Initialize a module logger in new objects"""
@@ -40,22 +45,29 @@ class LogMixin(object):
         super(LogMixin, self).__init__(*args, **kwargs)
 
 
+def check_next_url(request, next_url):
+    log = logging.getLogger(__name__)
+    if not next_url:
+        return
+    if not utils.is_nonnull(next_url):
+        log.warning('next parameter ignored, as it contains null characters')
+        return
+    try:
+        next_url.encode('ascii')
+    except UnicodeDecodeError:
+        log.warning('next parameter ignored, as is\'s not an ASCII string')
+        return
+    if not utils.same_origin(next_url, request.build_absolute_uri()):
+        log.warning('next parameter ignored as it is not of the same origin')
+        return
+    return next_url
+
+
 class ProfileMixin(object):
     profile = None
 
     def set_next_url(self, next_url):
-        if not next_url:
-            return
-        if not utils.is_nonnull(next_url):
-            self.log.warning('next parameter ignored, as it contains null characters')
-            return
-        try:
-            next_url.encode('ascii')
-        except UnicodeDecodeError:
-            self.log.warning('next parameter ignored, as is\'s not an ASCII string')
-            return
-        if not utils.same_origin(next_url, self.request.build_absolute_uri()):
-            self.log.warning('next parameter ignored as it is not of the same origin')
+        if not check_next_url(self.request, next_url):
             return
         self.set_state('next_url', next_url)
 
@@ -360,7 +372,7 @@ class LoginView(ProfileMixin, LogMixin, View):
             return self.request_discovery_service(
                 request, is_passive=request.GET.get('passive') == '1')
 
-        next_url = request.GET.get(REDIRECT_FIELD_NAME)
+        next_url = check_next_url(self.request, request.GET.get(REDIRECT_FIELD_NAME))
         idp = self.get_idp(request)
         if idp is None:
             return HttpResponseBadRequest('no idp found')
@@ -402,12 +414,46 @@ class LoginView(ProfileMixin, LogMixin, View):
                             </samlp:Extensions>''' % eo_next_url
                     )
             self.set_next_url(next_url)
+            self.add_login_hints(idp, authn_request, request=request, next_url=next_url)
             login.buildAuthnRequestMsg()
         except lasso.Error as e:
             return HttpResponseBadRequest('error initializing the authentication request: %r' % e)
         self.log.debug('sending authn request %r', authn_request.dump())
         self.log.debug('to url %r', login.msgUrl)
         return HttpResponseRedirect(login.msgUrl)
+
+    def add_extension_node(self, authn_request, node):
+        '''Factorize adding an XML node to the samlp:Extensions node'''
+        if not authn_request.extensions:
+            authn_request.extensions = lasso.Samlp2Extensions()
+        assert hasattr(authn_request.extensions, 'any'), 'extension nodes need lasso > 2.5.1'
+        serialized = ET.tostring(node, 'utf-8')
+        # tostring return bytes in PY3, but lasso needs str
+        if six.PY3:
+            serialized = serialized.decode('utf-8')
+        extension_content = authn_request.extensions.any or ()
+        extension_content += (serialized,)
+        authn_request.extensions.any = extension_content
+
+    def is_in_backoffice(self, request, next_url):
+        path = utils.get_local_path(request, next_url)
+        return path.startswith(('/admin/', '/manage/', '/manager/'))
+
+    def add_login_hints(self, idp, authn_request, request, next_url=None):
+        login_hints = utils.get_setting(idp, 'LOGIN_HINTS', [])
+        hints = []
+        for login_hint in login_hints:
+            if login_hint == 'backoffice':
+                if self.is_in_backoffice(request, next_url):
+                    hints.append('backoffice')
+            if login_hint == 'always_backoffice':
+                hints.append('backoffice')
+
+        for hint in hints:
+            node = ET.Element(LOGIN_HINT)
+            node.text = hint
+            self.add_extension_node(authn_request, node)
+
 
 # we need fine control of transactions to prevent double user creations
 login = transaction.non_atomic_requests(csrf_exempt(LoginView.as_view()))
