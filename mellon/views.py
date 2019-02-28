@@ -26,9 +26,11 @@ RETRY_LOGIN_COOKIE = 'MELLON_RETRY_LOGIN'
 lasso.setFlag('thin-sessions')
 
 if six.PY3:
-    lasso_decode = lambda x: x
+    def lasso_decode(x):
+        return x
 else:
-    lasso_decode = lambda x: x.decode('utf-8')
+    def lasso_decode(x):
+        return x.decode('utf-8')
 
 
 class LogMixin(object):
@@ -169,8 +171,7 @@ class LoginView(ProfileMixin, LogMixin, View):
         attributes['issuer'] = login.remoteProviderId
         if login.nameIdentifier:
             name_id = login.nameIdentifier
-            name_id_format = force_text(name_id.format
-                                     or lasso.SAML2_NAME_IDENTIFIER_FORMAT_UNSPECIFIED)
+            name_id_format = force_text(name_id.format or lasso.SAML2_NAME_IDENTIFIER_FORMAT_UNSPECIFIED)
             attributes.update({
                 'name_id_content': lasso_decode(name_id.content),
                 'name_id_format': name_id_format
@@ -207,8 +208,7 @@ class LoginView(ProfileMixin, LogMixin, View):
                 self.log.info('user %s (NameID is %r) logged in using SAML', user,
                               attributes['name_id_content'])
                 request.session['mellon_session'] = utils.flatten_datetime(attributes)
-                if ('session_not_on_or_after' in attributes and
-                        not settings.SESSION_EXPIRE_AT_BROWSER_CLOSE):
+                if ('session_not_on_or_after' in attributes and not settings.SESSION_EXPIRE_AT_BROWSER_CLOSE):
                     request.session.set_expiry(
                         utils.get_seconds_expiry(
                             attributes['session_not_on_or_after']))
@@ -354,8 +354,8 @@ class LoginView(ProfileMixin, LogMixin, View):
             return self.continue_sso_artifact(request, lasso.HTTP_METHOD_ARTIFACT_GET)
 
         # redirect to discovery service if needed
-        if (not 'entityID' in request.GET
-                and not 'nodisco' in request.GET
+        if ('entityID' not in request.GET
+                and 'nodisco' not in request.GET
                 and app_settings.DISCOVERY_SERVICE_URL):
             return self.request_discovery_service(
                 request, is_passive=request.GET.get('passive') == '1')
@@ -400,7 +400,7 @@ class LoginView(ProfileMixin, LogMixin, View):
                                  xmlns:eo="https://www.entrouvert.com/">
                                <eo:next_url>%s</eo:next_url>
                             </samlp:Extensions>''' % eo_next_url
-                        )
+                    )
             self.set_next_url(next_url)
             login.buildAuthnRequestMsg()
         except lasso.Error as e:
