@@ -189,7 +189,7 @@ class LoginView(ProfileMixin, LogMixin, View):
         return self.authenticate(request, login, attributes)
 
     def authenticate(self, request, login, attributes):
-        user = auth.authenticate(saml_attributes=attributes)
+        user = auth.authenticate(request=request, saml_attributes=attributes)
         next_url = self.get_next_url(default=resolve_url(settings.LOGIN_REDIRECT_URL))
         if user is not None:
             if user.is_active:
@@ -418,7 +418,7 @@ class LogoutView(ProfileMixin, LogMixin, View):
         next_url = request.GET.get(REDIRECT_FIELD_NAME)
         referer = request.META.get('HTTP_REFERER')
         if not referer or utils.same_origin(referer, request.build_absolute_uri()):
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 logout = None
                 try:
                     issuer = request.session.get('mellon_session', {}).get('issuer')

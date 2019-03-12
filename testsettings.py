@@ -16,23 +16,19 @@ SECRET_KEY = 'xx'
 STATIC_URL = '/static/'
 INSTALLED_APPS = ('mellon', 'django.contrib.auth',
                   'django.contrib.contenttypes', 'django.contrib.sessions')
-MIDDLEWARE_CLASSES = global_settings.MIDDLEWARE_CLASSES
-MIDDLEWARE_CLASSES += (
+MIDDLEWARE = global_settings.MIDDLEWARE
+MIDDLEWARE += [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-)
+]
 AUTHENTICATION_BACKENDS = (
     'mellon.backends.SAMLBackend',
 )
 ROOT_URLCONF = 'urls_tests'
-TEMPLATE_DIRS = [
-    'tests/templates/',
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'DIRS': ['tests/templates/'],
+    },
 ]
-if django.VERSION >= (1, 8):
-    TEMPLATES = [
-        {
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'APP_DIRS': True,
-            'DIRS': TEMPLATE_DIRS,
-        },
-    ]

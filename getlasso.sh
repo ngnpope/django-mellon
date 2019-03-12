@@ -2,11 +2,12 @@
 
 # Get venv site-packages path
 DSTDIR=`python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())'`
+PYTHON=python`python2 -c 'from distutils.sysconfig import get_python_version; print(get_python_version())'`
 
 # Get not venv site-packages path
 # Remove first path (assuming that is the venv path)
-NONPATH=`echo $PATH | sed 's/^[^:]*://'`
-SRCDIR=`PATH=$NONPATH python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())'`
+NONPATH=`echo $PATH | sed 's/^[^:]*://' | sed 's/^[^:]*://'`
+SRCDIR=`PATH=$NONPATH $PYTHON -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())'`
 
 # Clean up
 rm -f $DSTDIR/lasso.*

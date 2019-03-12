@@ -27,7 +27,7 @@ class PassiveAuthenticationMiddleware(object):
             return
         if not app_settings.OPENED_SESSION_COOKIE_NAME:
             return
-        if hasattr(request, 'user') and request.user.is_authenticated():
+        if hasattr(request, 'user') and request.user.is_authenticated:
             return
         if PASSIVE_TRIED_COOKIE in request.COOKIES:
             return

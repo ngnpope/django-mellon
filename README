@@ -279,15 +279,3 @@ only db and cached_db are supported currently, the equivalent session engines ar
 and
 
     mellon.sessions_backends.cached_db
-
-Changes
-=======
-
-1.2.26
-------
-- allow federation with IdP using transient NameID and stable identifier
-  attribute
-- add support for artifact POST
-- replace dateutil by isodate
-- do not wrap login view in a transaction (using the non_atomic_request
-  decorator), to allow finer use of transaction in the login workflow

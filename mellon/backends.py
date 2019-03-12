@@ -4,7 +4,7 @@ from . import utils
 
 
 class SAMLBackend(ModelBackend):
-    def authenticate(self, saml_attributes):
+    def authenticate(self, request, saml_attributes):
         # without an issuer we can do nothing
         if not 'issuer' in saml_attributes:
             return
