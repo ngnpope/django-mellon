@@ -147,7 +147,7 @@ def test_sp_initiated_login_discovery_service_passive(private_settings, client):
     assert response['Location'].startswith('https://disco?')
     assert params == {'isPassive': ['true'],
                       'entityID': ['http://testserver/metadata/'],
-                      'return': ['http://testserver/login/?nodisco=1']}
+                      'return': ['http://testserver/login/?passive=1&nodisco=1']}
 
 
 def test_sp_initiated_login_discovery_service_nodisco(private_settings, client):
