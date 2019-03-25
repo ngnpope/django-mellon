@@ -345,7 +345,7 @@ class LoginView(ProfileMixin, LogMixin, View):
             return HttpResponseBadRequest('error processing the authentication response: %r' % e)
         else:
             return self.sso_success(request, login)
-        return self.sso_failure(request, login, reason=idp_message, status_codes=status_codes)
+        return self.sso_failure(request, reason=idp_message, status_codes=status_codes)
 
     def request_discovery_service(self, request, is_passive=False):
         return_url = request.build_absolute_uri()
