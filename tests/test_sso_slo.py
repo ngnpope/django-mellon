@@ -61,7 +61,7 @@ class MockIdp(object):
         self.server = server = lasso.Server.newFromBuffers(idp_metadata, private_key)
         server.addProviderFromBuffer(lasso.PROVIDER_ROLE_SP, sp_metadata)
 
-    def process_authn_request_redirect(self, url, auth_result=True, consent=True):
+    def process_authn_request_redirect(self, url, auth_result=True, consent=True, msg=None):
         login = lasso.Login(self.server)
         login.processAuthnRequestMsg(url.split('?', 1)[1])
         # See
@@ -86,6 +86,8 @@ class MockIdp(object):
                                  "FIXME",
                                  "FIXME",
                                  "FIXME")
+        if not auth_result and msg:
+            login.response.status.statusMessage = msg
         if login.protocolProfile == lasso.LOGIN_PROTOCOL_PROFILE_BRWS_ART:
             login.buildArtifactMsg(lasso.HTTP_METHOD_ARTIFACT_GET)
             self.artifact = login.artifact
@@ -147,7 +149,10 @@ def test_sso(db, app, idp, caplog, sp_settings):
 
 def test_sso_request_denied(db, app, idp, caplog, sp_settings):
     response = app.get(reverse('mellon_login'))
-    url, body, relay_state = idp.process_authn_request_redirect(response['Location'], auth_result=False)
+    url, body, relay_state = idp.process_authn_request_redirect(
+        response['Location'],
+        auth_result=False,
+        msg=u'User is not allowed to login')
     assert not relay_state
     assert url.endswith(reverse('mellon_login'))
     response = app.post(reverse('mellon_login'), params={'SAMLResponse': body, 'RelayState': relay_state})
@@ -157,6 +162,28 @@ def test_sso_request_denied(db, app, idp, caplog, sp_settings):
     else:
         assert "status is not success codes: [u'urn:oasis:names:tc:SAML:2.0:status:Responder',\
  u'urn:oasis:names:tc:SAML:2.0:status:RequestDenied']" in caplog.text
+
+
+def test_sso_request_denied_artifact(db, app, caplog, sp_settings, idp_metadata, idp_private_key, rf):
+    sp_settings.MELLON_DEFAULT_ASSERTION_CONSUMER_BINDING = 'artifact'
+    request = rf.get('/')
+    sp_metadata = create_metadata(request)
+    idp = MockIdp(idp_metadata, idp_private_key, sp_metadata)
+    response = app.get(reverse('mellon_login'))
+    url, body, relay_state = idp.process_authn_request_redirect(
+        response['Location'],
+        auth_result=False,
+        msg=u'User is not allowed to login')
+    assert not relay_state
+    assert body is None
+    assert reverse('mellon_login') in url
+    assert 'SAMLart' in url
+    acs_artifact_url = url.split('testserver', 1)[1]
+    with HTTMock(idp.mock_artifact_resolver()):
+        response = app.get(acs_artifact_url, params={'RelayState': relay_state})
+    assert "status is not success codes: ['urn:oasis:names:tc:SAML:2.0:status:Responder',\
+ 'urn:oasis:names:tc:SAML:2.0:status:RequestDenied']" in caplog.text
+    assert 'User is not allowed to login' in response
 
 
 def test_sso_artifact(db, app, caplog, sp_settings, idp_metadata, idp_private_key, rf):
