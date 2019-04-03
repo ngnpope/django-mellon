@@ -34,16 +34,16 @@ def sp_private_key():
 
 
 @fixture
-def public_key():
-    return open('tests/public-key.pem').read()
+def sp_public_key():
+    return ''.join(open('tests/sp-public-key.pem').read().splitlines()[1:-1])
 
 
 @fixture
-def sp_settings(private_settings, idp_metadata, sp_private_key, public_key):
+def sp_settings(private_settings, idp_metadata, sp_private_key, sp_public_key):
     private_settings.MELLON_IDENTITY_PROVIDERS = [{
         'METADATA': idp_metadata,
     }]
-    private_settings.MELLON_PUBLIC_KEYS = [public_key]
+    private_settings.MELLON_PUBLIC_KEYS = [sp_public_key]
     private_settings.MELLON_PRIVATE_KEYS = [sp_private_key]
     private_settings.MELLON_NAME_ID_POLICY_FORMAT = lasso.SAML2_NAME_IDENTIFIER_FORMAT_PERSISTENT
     private_settings.LOGIN_REDIRECT_URL = '/'
