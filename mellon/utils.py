@@ -61,6 +61,13 @@ def create_server(request):
             private_key_password = None
         server = lasso.Server.newFromBuffers(metadata, private_key_content=private_key,
                                              private_key_password=private_key_password)
+        if app_settings.SIGNATURE_METHOD:
+            symbol_name = 'SIGNATURE_METHOD_' + app_settings.SIGNATURE_METHOD.replace('-', '_').upper()
+            if hasattr(lasso, symbol_name):
+                server.signatureMethod = getattr(lasso, symbol_name)
+            else:
+                logger.warning('mellon: unable to set signature method %s', app_settings.SIGNATURE_METHOD)
+
         server.setEncryptionPrivateKeyWithPassword(private_key, private_key_password)
         private_keys = app_settings.PRIVATE_KEYS
         # skip first key if it is already loaded

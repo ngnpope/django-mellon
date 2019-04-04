@@ -47,6 +47,7 @@ def sp_settings(private_settings, idp_metadata, sp_private_key, sp_public_key):
     private_settings.MELLON_PRIVATE_KEYS = [sp_private_key]
     private_settings.MELLON_NAME_ID_POLICY_FORMAT = lasso.SAML2_NAME_IDENTIFIER_FORMAT_PERSISTENT
     private_settings.LOGIN_REDIRECT_URL = '/'
+    private_settings.MELLON_SIGNATURE_METHOD = 'RSA_SHA256'
     return private_settings
 
 
@@ -59,6 +60,7 @@ def sp_metadata(sp_settings, rf):
 class MockIdp(object):
     def __init__(self, idp_metadata, private_key, sp_metadata):
         self.server = server = lasso.Server.newFromBuffers(idp_metadata, private_key)
+        self.server.signatureMethod = lasso.SIGNATURE_METHOD_RSA_SHA256
         server.addProviderFromBuffer(lasso.PROVIDER_ROLE_SP, sp_metadata)
 
     def process_authn_request_redirect(self, url, auth_result=True, consent=True, msg=None):
@@ -76,6 +78,7 @@ class MockIdp(object):
             base64.b64decode(
                 urlparse.parse_qs(
                     urlparse.urlparse(url).query)['SAMLRequest'][0]), -15)
+        assert 'rsa-sha256' in url
         try:
             login.validateRequestMsg(auth_result, consent)
         except lasso.LoginRequestDeniedError:
@@ -96,11 +99,14 @@ class MockIdp(object):
             login.buildAuthnResponseMsg()
         else:
             raise NotImplementedError
+        if login.msgBody:
+            assert b'rsa-sha256' in base64.b64decode(login.msgBody)
         return login.msgUrl, login.msgBody, login.msgRelayState
 
     def resolve_artifact(self, soap_message):
         login = lasso.Login(self.server)
         login.processRequestMsg(soap_message)
+        assert 'rsa-sha256' in soap_message
         if hasattr(self, 'artifact') and self.artifact == login.artifact:
             # artifact is known, go on !
             login.artifactMessage = self.artifact_message
@@ -108,6 +114,7 @@ class MockIdp(object):
             del self.artifact
             del self.artifact_message
         login.buildResponseMsg()
+        assert 'rsa-sha256' in login.msgBody
         return login.msgBody
 
     def mock_artifact_resolver(self):
