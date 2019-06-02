@@ -69,7 +69,7 @@ def check_next_url(request, next_url):
         return
     try:
         next_url.encode('ascii')
-    except UnicodeDecodeError:
+    except UnicodeError:
         log.warning('next parameter ignored, as is\'s not an ASCII string')
         return
     if not utils.same_origin(next_url, request.build_absolute_uri()):
