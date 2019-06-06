@@ -130,25 +130,28 @@ class DefaultAdapter(object):
             return User.objects.get(saml_identifiers__name_id=name_id,
                                     saml_identifiers__issuer=issuer)
         except User.DoesNotExist:
-            if not utils.get_setting(idp, 'PROVISION'):
-                self.logger.warning('provisionning disabled, login refused')
-                return None
-            user = self.create_user(User)
-            saml_id, created = models.UserSAMLIdentifier.objects.get_or_create(
-                name_id=name_id, issuer=issuer, defaults={'user': user})
-            if created:
-                try:
-                    self.finish_create_user(idp, saml_attributes, user)
-                except UserCreationError:
-                    user.delete()
-                    return None
-                self.logger.info('created new user %s with name_id %s from issuer %s',
-                                 user, name_id, issuer)
-            else:
+            pass
+
+        if not utils.get_setting(idp, 'PROVISION'):
+            self.logger.warning('provisionning disabled, login refused')
+            return None
+
+        user = self.create_user(User)
+        saml_id, created = models.UserSAMLIdentifier.objects.get_or_create(
+            name_id=name_id, issuer=issuer, defaults={'user': user})
+        if created:
+            try:
+                self.finish_create_user(idp, saml_attributes, user)
+            except UserCreationError:
                 user.delete()
-                user = saml_id.user
-                self.logger.info('looked up user %s with name_id %s from issuer %s',
-                                 user, name_id, issuer)
+                return None
+            self.logger.info('created new user %s with name_id %s from issuer %s',
+                             user, name_id, issuer)
+        else:
+            user.delete()
+            user = saml_id.user
+            self.logger.info('looked up user %s with name_id %s from issuer %s',
+                             user, name_id, issuer)
         return user
 
     def provision(self, user, idp, saml_attributes):
