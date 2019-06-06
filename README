@@ -261,6 +261,32 @@ MELLON_DEFAULT_ASSERTION_CONSUMER_BINDING
 Should be post or artifact. Default is post. You can refer to the SAML 2.0
 specification to learn the difference.
 
+MELLON_LOOKUP_BY_ATTRIBUTES
+---------------------------
+
+Allow looking for user with some SAML attributes if the received NameID is
+still unknown. It must be a list of dictionnaries with two mandatory keys
+`user_field` and `saml_attribute`. The optionnal key `ignore-case` should be a
+boolean indicating if the match is case-insensitive (default is to respect the
+case).
+
+Each dictionnary is a rule for linking, applying all the rules should only
+return one user, the boolean operator OR is applied between the rules.
+
+So for example if you received a SAML attribute named `email` and you want to
+link user with the same email you would configured it like that:
+
+   MELLON_LOOKUP_BY_ATTRIBUTES = [
+       {
+           'saml_attribute': 'email',
+           'user_field': 'email',
+       }
+   ]
+
+The targeted user(s) field(s) should be as much as possible unique
+individually, if not django-mellon will refuse to link multiple users matching
+the rules.
+
 Tests
 =====
 

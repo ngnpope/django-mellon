@@ -40,6 +40,7 @@ class AppSettings(object):
         'ARTIFACT_RESOLVE_TIMEOUT': 10.0,
         'LOGIN_HINTS': [],
         'SIGNATURE_METHOD': 'RSA-SHA256',
+        'LOOKUP_BY_ATTRIBUTES': [],
     }
 
     @property

@@ -6,7 +6,7 @@ import lasso
 import requests
 import requests.exceptions
 
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, FieldDoesNotExist
 from django.contrib import auth
 from django.contrib.auth.models import Group
 from django.utils import six
@@ -19,6 +19,15 @@ User = auth.get_user_model()
 
 class UserCreationError(Exception):
     pass
+
+
+def display_truncated_list(l, max_length=10):
+    s = '[' + ', '.join(map(six.text_type, l))
+    if len(l) > max_length:
+        s += '..truncated more than %d items (%d)]' % (max_length, len(l))
+    else:
+        s += ']'
+    return s
 
 
 class DefaultAdapter(object):
@@ -128,31 +137,96 @@ class DefaultAdapter(object):
             name_id = saml_attributes['name_id_content']
         issuer = saml_attributes['issuer']
         try:
-            return User.objects.get(saml_identifiers__name_id=name_id,
+            user = User.objects.get(saml_identifiers__name_id=name_id,
                                     saml_identifiers__issuer=issuer)
+            self.logger.info('looked up user %s with name_id %s from issuer %s',
+                             user, name_id, issuer)
+            return user
         except User.DoesNotExist:
             pass
 
-        if not utils.get_setting(idp, 'PROVISION'):
-            self.logger.warning('provisionning disabled, login refused')
-            return None
+        user = None
+        lookup_by_attributes = utils.get_setting(idp, 'LOOKUP_BY_ATTRIBUTES')
+        if lookup_by_attributes:
+            user = self._lookup_by_attributes(idp, saml_attributes, lookup_by_attributes)
 
-        user = self.create_user(User)
+        created = False
+        if not user:
+            if not utils.get_setting(idp, 'PROVISION'):
+                self.logger.debug('provisionning disabled, login refused')
+                return None
+            created = True
+            user = self.create_user(User)
+
         nameid_user = self._link_user(idp, saml_attributes, issuer, name_id, user)
         if user != nameid_user:
             self.logger.info('looked up user %s with name_id %s from issuer %s',
                              nameid_user, name_id, issuer)
-            user.delete()
+            if created:
+                user.delete()
             return nameid_user
 
-        try:
-            self.finish_create_user(idp, saml_attributes, nameid_user)
-        except UserCreationError:
-            nameid_user.delete()
-            return None
-        self.logger.info('created new user %s with name_id %s from issuer %s',
-                         nameid_user, name_id, issuer)
+        if created:
+            try:
+                self.finish_create_user(idp, saml_attributes, nameid_user)
+            except UserCreationError:
+                user.delete()
+                return None
+            self.logger.info('created new user %s with name_id %s from issuer %s',
+                             nameid_user, name_id, issuer)
         return nameid_user
+
+    def _lookup_by_attributes(self, idp, saml_attributes, lookup_by_attributes):
+        if not isinstance(lookup_by_attributes, list):
+            self.logger.error('invalid LOOKUP_BY_ATTRIBUTES configuration %r: it must be a list', lookup_by_attributes)
+            return None
+
+        users = set()
+        for line in lookup_by_attributes:
+            if not isinstance(line, dict):
+                self.logger.error('invalid LOOKUP_BY_ATTRIBUTES configuration %r: it must be a list of dicts', line)
+                continue
+            user_field = line.get('user_field')
+            if not hasattr(user_field, 'isalpha'):
+                self.logger.error('invalid LOOKUP_BY_ATTRIBUTES configuration %r: user_field is missing', line)
+                continue
+            try:
+                User._meta.get_field(user_field)
+            except FieldDoesNotExist:
+                self.logger.error('invalid LOOKUP_BY_ATTRIBUTES configuration %r, user field %s does not exist',
+                                  line, user_field)
+                continue
+            saml_attribute = line.get('saml_attribute')
+            if not hasattr(saml_attribute, 'isalpha'):
+                self.logger.error('invalid LOOKUP_BY_ATTRIBUTES configuration %r: saml_attribute is missing', line)
+                continue
+            values = saml_attributes.get(saml_attribute)
+            if not values:
+                self.logger.error('looking for user by saml attribute %r and user field %r, skipping because empty',
+                                  saml_attribute, user_field)
+                continue
+            ignore_case = line.get('ignore-case', False)
+            for value in values:
+                key = user_field
+                if ignore_case:
+                    key += '__iexact'
+                users_found = User.objects.filter(saml_identifiers__isnull=True, **{key: value})
+                if not users_found:
+                    self.logger.debug('looking for users by attribute %r and user field %r with value %r: not found',
+                                      saml_attribute, user_field, value)
+                    continue
+                self.logger.info(u'looking for user by attribute %r and user field %r with value %r: found %s',
+                                 saml_attribute, user_field, value, display_truncated_list(users_found))
+                users.update(users_found)
+        if len(users) == 1:
+            user = list(users)[0]
+            self.logger.info(u'looking for user by attributes %r: found user %s',
+                             lookup_by_attributes, user)
+            return user
+        elif len(users) > 1:
+            self.logger.warning(u'looking for user by attributes %r: too many users found(%d), failing',
+                                lookup_by_attributes, len(users))
+        return None
 
     def _link_user(self, idp, saml_attributes, issuer, name_id, user):
         saml_id, created = models.UserSAMLIdentifier.objects.get_or_create(
