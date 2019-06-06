@@ -43,6 +43,9 @@ class DefaultAdapter(object):
     def get_identity_providers_setting(self):
         return app_settings.IDENTITY_PROVIDERS
 
+    def get_users_queryset(self, idp, saml_attributes):
+        return User.objects.all()
+
     def get_idps(self):
         for i, idp in enumerate(self.get_identity_providers_setting()):
             if 'METADATA_URL' in idp and 'METADATA' not in idp:
@@ -137,8 +140,9 @@ class DefaultAdapter(object):
             name_id = saml_attributes['name_id_content']
         issuer = saml_attributes['issuer']
         try:
-            user = User.objects.get(saml_identifiers__name_id=name_id,
-                                    saml_identifiers__issuer=issuer)
+            user = self.get_users_queryset(idp, saml_attributes).get(
+                saml_identifiers__name_id=name_id,
+                saml_identifiers__issuer=issuer)
             self.logger.info('looked up user %s with name_id %s from issuer %s',
                              user, name_id, issuer)
             return user
@@ -210,7 +214,8 @@ class DefaultAdapter(object):
                 key = user_field
                 if ignore_case:
                     key += '__iexact'
-                users_found = User.objects.filter(saml_identifiers__isnull=True, **{key: value})
+                users_found = self.get_users_queryset(idp, saml_attributes).filter(
+                    saml_identifiers__isnull=True, **{key: value})
                 if not users_found:
                     self.logger.debug('looking for users by attribute %r and user field %r with value %r: not found',
                                       saml_attribute, user_field, value)
