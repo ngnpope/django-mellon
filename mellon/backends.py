@@ -14,10 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import unicode_literals
+import logging
 
 from django.contrib.auth.backends import ModelBackend
 
 from . import utils
+
+logger = logging.getLogger(__name__)
 
 
 class SAMLBackend(ModelBackend):
@@ -25,8 +28,12 @@ class SAMLBackend(ModelBackend):
         saml_attributes = credentials.get('saml_attributes') or {}
         # without an issuer we can do nothing
         if 'issuer' not in saml_attributes:
-            return
+            logger.debug('no idp in saml_attributes')
+            return None
         idp = utils.get_idp(saml_attributes['issuer'])
+        if not idp:
+            logger.debug('unknown idp %s', saml_attributes['issuer'])
+            return None
         adapters = utils.get_adapters(idp)
         for adapter in adapters:
             if not hasattr(adapter, 'authorize'):

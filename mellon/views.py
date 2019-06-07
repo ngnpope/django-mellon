@@ -130,7 +130,7 @@ class LoginView(ProfileMixin, LogMixin, View):
             for idp in utils.get_idps():
                 return idp
             else:
-                return None
+                return {}
         else:
             return utils.get_idp(entity_id)
 
@@ -305,7 +305,6 @@ class LoginView(ProfileMixin, LogMixin, View):
                 'no entity id found for this artifact %r' % artifact)
         idp = utils.get_idp(login.remoteProviderId)
         if not idp:
-            self.log.warning('entity id %r is unknown', login.remoteProviderId)
             return HttpResponseBadRequest(
                 'entity id %r is unknown' % login.remoteProviderId)
         verify_ssl_certificate = utils.get_setting(
