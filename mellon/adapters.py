@@ -1,3 +1,18 @@
+# django-mellon - SAML2 authentication for Django
+# Copyright (C) 2014-2019 Entr'ouvert
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import logging
 import uuid
 from xml.etree import ElementTree as ET
@@ -76,7 +91,7 @@ class DefaultAdapter(object):
                     self.logger.error(u'METADATA of %d-th idp has no EntityDescriptor root tag', i)
                     continue
 
-                if not 'entityID' in doc.attrib:
+                if 'entityID' not in doc.attrib:
                     self.logger.error(
                         u'METADATA of %d-th idp has no entityID attribute on its root tag', i)
                     continue
@@ -105,7 +120,7 @@ class DefaultAdapter(object):
         except (AttributeError, KeyError, IndexError) as e:
             self.logger.error(
                 u'invalid reference in username template %r: %s', username_template, e)
-        except Exception as e:
+        except Exception:
             self.logger.exception(u'unknown error when formatting username')
         else:
             return username

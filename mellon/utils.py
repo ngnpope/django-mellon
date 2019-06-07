@@ -1,3 +1,18 @@
+# django-mellon - SAML2 authentication for Django
+# Copyright (C) 2014-2019 Entr'ouvert
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import logging
 import datetime
 import importlib
@@ -29,16 +44,16 @@ def create_metadata(request):
         public_keys.append(public_key)
     name_id_formats = app_settings.NAME_ID_FORMATS
     return render_to_string('mellon/metadata.xml', {
-            'entity_id': request.build_absolute_uri(entity_id),
-            'login_url': request.build_absolute_uri(login_url),
-            'logout_url': request.build_absolute_uri(logout_url),
-            'public_keys': public_keys,
-            'name_id_formats': name_id_formats,
-            'default_assertion_consumer_binding': app_settings.DEFAULT_ASSERTION_CONSUMER_BINDING,
-            'organization': app_settings.ORGANIZATION,
-            'contact_persons': app_settings.CONTACT_PERSONS,
-            'discovery_endpoint_url': request.build_absolute_uri(reverse('mellon_login')),
-        })
+        'entity_id': request.build_absolute_uri(entity_id),
+        'login_url': request.build_absolute_uri(login_url),
+        'logout_url': request.build_absolute_uri(logout_url),
+        'public_keys': public_keys,
+        'name_id_formats': name_id_formats,
+        'default_assertion_consumer_binding': app_settings.DEFAULT_ASSERTION_CONSUMER_BINDING,
+        'organization': app_settings.ORGANIZATION,
+        'contact_persons': app_settings.CONTACT_PERSONS,
+        'discovery_endpoint_url': request.build_absolute_uri(reverse('mellon_login')),
+    })
 
 
 def create_server(request):
@@ -130,7 +145,7 @@ def iso8601_to_datetime(date_string, default=None):
        This function ignores the sub-second resolution'''
     try:
         dt = isodate.parse_datetime(date_string)
-    except:
+    except Exception:
         return default
     if is_aware(dt):
         if not settings.USE_TZ:
@@ -209,7 +224,7 @@ def create_logout(request):
 
 
 def is_nonnull(s):
-    return not '\x00' in s
+    return '\x00' not in s
 
 
 def same_origin(url1, url2):
@@ -243,6 +258,7 @@ def get_status_codes_and_message(profile):
     if status.statusMessage:
         message = lasso_decode(status.statusMessage)
     return status_codes, message
+
 
 def login(request, user):
     for adapter in get_adapters():
