@@ -95,12 +95,11 @@ def create_server(request):
                 key = key[0]
             server.setEncryptionPrivateKeyWithPassword(key, password)
         for idp in get_idps():
-            try:
-                server.addProviderFromBuffer(lasso.PROVIDER_ROLE_IDP, idp['METADATA'])
-            except lasso.Error as e:
-                logger.error(u'bad metadata in idp %r', idp['ENTITY_ID'])
-                logger.debug(u'lasso error: %s', e)
-                continue
+            if idp and idp.get('METADATA'):
+                try:
+                    server.addProviderFromBuffer(lasso.PROVIDER_ROLE_IDP, idp['METADATA'])
+                except lasso.Error as e:
+                    logger.error(u'bad metadata in idp %s, %s', idp['ENTITY_ID'], e)
         cache[root] = server
         settings._MELLON_SERVER_CACHE = cache
     return settings._MELLON_SERVER_CACHE.get(root)

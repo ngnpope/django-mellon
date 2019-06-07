@@ -13,10 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
+import datetime
 import re
 import lasso
+import time
 from multiprocessing.pool import ThreadPool
+
+import pytest
 
 from django.contrib import auth
 from django.db import connection
@@ -167,7 +170,7 @@ def test_provision_is_superuser(settings, django_user_model, idp, saml_attribute
     user = SAMLBackend().authenticate(saml_attributes=saml_attributes)
     assert user.is_superuser is True
     assert user.is_staff is True
-    assert not 'flag is_staff and is_superuser removed' in caplog.text
+    assert 'flag is_staff and is_superuser removed' not in caplog.text
 
 
 def test_provision_absent_attribute(settings, django_user_model, idp, saml_attributes, caplog):
@@ -326,3 +329,92 @@ def test_lookup_user_by_attributes_ignore_case(settings, idp, saml_attributes, j
         {'user_field': 'username', 'saml_attribute': 'saml_at1', 'ignore-case': True},
     ]
     assert adapter.lookup_user(idp, saml_attributes) == jane
+
+
+@pytest.fixture
+def adapter():
+    return DefaultAdapter()
+
+
+def test_load_metadata_simple(adapter, metadata):
+    idp = {'METADATA': metadata}
+    assert adapter.load_metadata(idp, 0) == metadata
+
+
+def test_load_metadata_legacy(adapter, metadata_path, metadata):
+    idp = {'METADATA': metadata_path}
+    assert adapter.load_metadata(idp, 0) == metadata
+    assert idp['METADATA'] == metadata
+
+
+def test_load_metadata_path(adapter, metadata_path, metadata, freezer):
+    now = time.time()
+    idp = {'METADATA_PATH': str(metadata_path)}
+    assert adapter.load_metadata(idp, 0) == metadata
+    assert idp['METADATA'] == metadata
+    assert idp['METADATA_PATH_LAST_UPDATE'] == now
+
+
+def test_load_metadata_url(settings, adapter, metadata, httpserver, freezer, caplog):
+    now = time.time()
+    httpserver.serve_content(content=metadata, headers={'Content-Type': 'application/xml'})
+    idp = {'METADATA_URL': httpserver.url}
+    assert adapter.load_metadata(idp, 0) == metadata
+    assert idp['METADATA'] == metadata
+    assert idp['METADATA_URL_LAST_UPDATE'] == now
+    assert 'METADATA_PATH' in idp
+    assert idp['METADATA_PATH'].startswith(settings.MEDIA_ROOT)
+    with open(idp['METADATA_PATH']) as fd:
+        assert fd.read() == metadata
+    assert idp['METADATA_PATH_LAST_UPDATE'] == now + 1
+    httpserver.serve_content(content=metadata.replace('idp5', 'idp6'),
+                             headers={'Content-Type': 'application/xml'})
+    assert adapter.load_metadata(idp, 0) == metadata
+
+    freezer.move_to(datetime.timedelta(seconds=3601))
+    caplog.clear()
+    assert adapter.load_metadata(idp, 0) == metadata
+    # wait for update thread to finish
+    try:
+        idp['METADATA_URL_UPDATE_THREAD'].join()
+    except KeyError:
+        pass
+    new_meta = adapter.load_metadata(idp, 0)
+    assert new_meta != metadata
+    assert new_meta == metadata.replace('idp5', 'idp6')
+    assert 'entityID changed' in caplog.records[-1].message
+    assert caplog.records[-1].levelname == 'ERROR'
+    # test load from file cache
+    del idp['METADATA']
+    del idp['METADATA_PATH']
+    del idp['METADATA_PATH_LAST_UPDATE']
+    httpserver.serve_content(content='', headers={'Content-Type': 'application/xml'})
+    assert adapter.load_metadata(idp, 0) == metadata.replace('idp5', 'idp6')
+
+
+def test_load_metadata_url_stale_timeout(settings, adapter, metadata, httpserver, freezer, caplog):
+    httpserver.serve_content(content=metadata, headers={'Content-Type': 'application/xml'})
+    idp = {'METADATA_URL': httpserver.url}
+    assert adapter.load_metadata(idp, 0) == metadata
+    httpserver.serve_content(content='', headers={'Content-Type': 'application/xml'})
+    assert adapter.load_metadata(idp, 0) == metadata
+
+    freezer.move_to(datetime.timedelta(seconds=24 * 3600 - 1))
+    assert adapter.load_metadata(idp, 0) == metadata
+
+    # wait for update thread to finish
+    try:
+        idp['METADATA_URL_UPDATE_THREAD'].join()
+    except KeyError:
+        pass
+    assert caplog.records[-1].levelname == 'WARNING'
+
+    freezer.move_to(datetime.timedelta(seconds=3601))
+    assert adapter.load_metadata(idp, 0) == metadata
+
+    # wait for update thread to finish
+    try:
+        idp['METADATA_URL_UPDATE_THREAD'].join()
+    except KeyError:
+        pass
+    assert caplog.records[-1].levelname == 'ERROR'

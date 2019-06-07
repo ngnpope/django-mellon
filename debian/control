@@ -15,7 +15,8 @@ Depends: ${misc:Depends}, ${python:Depends},
     python (>= 2.7),
     python-django (>= 1.5),
     python-isodate,
-    python-lasso
+    python-lasso,
+    python-atomicwrites
 Breaks: python-hobo (<< 0.34.5)
 Description: SAML authentication for Django
 
@@ -24,5 +25,6 @@ Architecture: all
 Depends: ${misc:Depends}, ${python:Depends},
     python3-django (>= 1.5),
     python3-isodate,
-    python3-lasso
+    python3-lasso,
+    python3-atomicwrites
 Description: SAML authentication for Django

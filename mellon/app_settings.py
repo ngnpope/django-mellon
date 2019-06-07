@@ -41,6 +41,8 @@ class AppSettings(object):
         'LOGIN_HINTS': [],
         'SIGNATURE_METHOD': 'RSA-SHA256',
         'LOOKUP_BY_ATTRIBUTES': [],
+        'METADATA_CACHE_TIME': 3600,
+        'METADATA_HTTP_TIMEOUT': 10,
     }
 
     @property

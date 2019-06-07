@@ -76,11 +76,23 @@ overridden in the identity provider settings by removing the
 MELLON_IDENTITY_PROVIDERS
 -------------------------
 
-A list of dictionaries, only one key is mandatory in those
-dictionaries `METADATA` it should contain the UTF-8 content of the
-metadata file of the identity provider or if it starts with a slash
-the absolute path toward a metadata file. All other keys are override
-of generic settings.
+A list of dictionaries, they must contain at least one of the keys `METADATA`
+(inline copy of the identity provider metadata), `METADATA_URL` URL of the IdP
+metadata file, or `METADATA_PATH` an absolute path to the IdP metadata file..
+All other keys are override of generic settings.
+
+When using an URL, the URL is automatically cached in the `MEDIA_ROOT`
+directory of your application in the directory named `mellon_metadata_cache`.
+If you restart the application and the URL is unavailable, the file cache will
+be used. The cache will be refreshed every `MELLON_METADATA_CACHE_TIME` seconds.
+If the HTTP retrieval of the metadata URL takes longer thant
+`METTON_METADATA_HTTP_TIMEOUT` seconds, retrieval will be skipped.
+
+When the cache is already loaded, retrievals are done in the background by a
+thread.
+
+When using a local absolute path, the metadata is reloaded each time the
+modification time of the file is superior to the last time it was loaded.
 
 MELLON_PUBLIC_KEYS
 ------------------
@@ -286,6 +298,18 @@ link user with the same email you would configured it like that:
 The targeted user(s) field(s) should be as much as possible unique
 individually, if not django-mellon will refuse to link multiple users matching
 the rules.
+
+MELLON_METADATA_CACHE_TIME
+--------------------------
+
+When using METADATA_URL to reference a metadata file, it's the duration in
+secondes between refresh of the metadata file. Default is 3600 seconds, 1 hour.
+
+METTON_METADATA_HTTP_TIMEOUT
+---------------------------
+
+Timeout in seconds for HTTP call made to retrieve metadata files. Default is 10
+seconds.
 
 Tests
 =====

@@ -13,127 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
 import datetime
 
 import mock
 import lasso
-import requests.exceptions
-from httmock import HTTMock
 
-from mellon.utils import create_server, create_metadata, iso8601_to_datetime, flatten_datetime
-import mellon.utils
+from mellon.utils import create_metadata, iso8601_to_datetime, flatten_datetime
 from xml_utils import assert_xml_constraints
-
-from utils import error_500, metadata_response
-
-
-def test_create_server_connection_error(mocker, rf, private_settings, caplog):
-    mocker.patch('requests.get',
-                 side_effect=requests.exceptions.ConnectionError('connection error'))
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-            'METADATA_URL': 'http://example.com/metadata',
-        }
-    ]
-    request = rf.get('/')
-    create_server(request)
-    assert 'connection error' in caplog.text
-
-
-def test_create_server_internal_server_error(mocker, rf, private_settings, caplog):
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-            'METADATA_URL': 'http://example.com/metadata',
-        }
-    ]
-    request = rf.get('/')
-    assert not 'failed with error' in caplog.text
-    with HTTMock(error_500):
-        create_server(request)
-    assert 'failed with error' in caplog.text
-
-
-def test_create_server_invalid_metadata(mocker, rf, private_settings, caplog):
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-            'METADATA': 'xxx',
-        }
-    ]
-    request = rf.get('/')
-    assert not 'failed with error' in caplog.text
-    with HTTMock(error_500):
-        create_server(request)
-    assert len(caplog.records) == 1
-    assert re.search('METADATA.*is invalid', caplog.text)
-
-
-def test_create_server_invalid_metadata_file(mocker, rf, private_settings, caplog):
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-            'METADATA': '/xxx',
-        }
-    ]
-    request = rf.get('/')
-    assert not 'failed with error' in caplog.text
-    with mock.patch('mellon.adapters.open', mock.mock_open(read_data='yyy'), create=True):
-        with HTTMock(error_500):
-            server = create_server(request)
-    assert len(server.providers) == 0
-
-
-def test_create_server_good_metadata_file(mocker, rf, private_settings, caplog):
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-            'METADATA': '/xxx',
-        }
-    ]
-    request = rf.get('/')
-    with mock.patch(
-        'mellon.adapters.open', mock.mock_open(read_data=open('tests/metadata.xml').read()),
-            create=True):
-        server = create_server(request)
-    assert 'ERROR' not in caplog.text
-    assert len(server.providers) == 1
-
-
-def test_create_server_good_metadata(mocker, rf, private_settings, caplog):
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-            'METADATA': open('tests/metadata.xml').read(),
-        }
-    ]
-    request = rf.get('/')
-    assert not 'failed with error' in caplog.text
-    server = create_server(request)
-    assert 'ERROR' not in caplog.text
-    assert len(server.providers) == 1
-
-
-def test_create_server_invalid_idp_dict(mocker, rf, private_settings, caplog):
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-        }
-    ]
-    request = rf.get('/')
-    assert not 'failed with error' in caplog.text
-    create_server(request)
-    assert 'missing METADATA' in caplog.text
-
-
-def test_create_server_good_metadata_url(mocker, rf, private_settings, caplog):
-    private_settings.MELLON_IDENTITY_PROVIDERS = [
-        {
-            'METADATA_URL': 'http://example.com/metadata',
-        }
-    ]
-
-    request = rf.get('/')
-    assert not 'failed with error' in caplog.text
-    with HTTMock(metadata_response):
-        server = create_server(request)
-    assert 'ERROR' not in caplog.text
-    assert len(server.providers) == 1
 
 
 def test_create_metadata(rf, private_settings, caplog):

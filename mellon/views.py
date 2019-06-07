@@ -169,6 +169,10 @@ class LoginView(ProfileMixin, LogMixin, View):
         '''show error message to user after a login failure'''
         login = self.profile
         idp = utils.get_idp(login.remoteProviderId)
+        if not idp:
+            self.log.warning('entity id %r is unknown', login.remoteProviderId)
+            return HttpResponseBadRequest(
+                'entity id %r is unknown' % login.remoteProviderId)
         error_url = utils.get_setting(idp, 'ERROR_URL')
         error_redirect_after_timeout = utils.get_setting(idp, 'ERROR_REDIRECT_AFTER_TIMEOUT')
         if error_url:
@@ -391,7 +395,7 @@ class LoginView(ProfileMixin, LogMixin, View):
 
         next_url = check_next_url(self.request, request.GET.get(REDIRECT_FIELD_NAME))
         idp = self.get_idp(request)
-        if idp is None:
+        if not idp:
             return HttpResponseBadRequest('no idp found')
         self.profile = login = utils.create_login(request)
         self.log.debug('authenticating to %r', idp['ENTITY_ID'])

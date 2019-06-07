@@ -13,13 +13,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
+
 import pytest
 import django_webtest
 
 
+@pytest.fixture(autouse=True)
+def settings(settings, tmpdir):
+    settings.MEDIA_ROOT = str(tmpdir.mkdir('media'))
+    return settings
+
+
 @pytest.fixture
-def app(request):
+def app(request, settings):
     wtm = django_webtest.WebTestMixin()
     wtm._patch_settings()
     request.addfinalizer(wtm._unpatch_settings)
@@ -38,7 +46,7 @@ def concurrency(settings):
 
 
 @pytest.fixture
-def private_settings(request):
+def private_settings(request, tmpdir):
     import django.conf
     from django.conf import UserSettingsHolder
     old = django.conf.settings._wrapped
@@ -57,3 +65,17 @@ def caplog(caplog):
     caplog.handler.stream = py.io.TextIO()
     caplog.handler.records = []
     return caplog
+
+
+@pytest.fixture(scope='session')
+def metadata():
+    with open(os.path.join(os.path.dirname(__file__), 'metadata.xml')) as fd:
+        yield fd.read()
+
+
+@pytest.fixture
+def metadata_path(tmpdir, metadata):
+    metadata_path = tmpdir / 'metadata.xml'
+    with metadata_path.open('w') as fd:
+        fd.write(metadata)
+    yield str(metadata_path)
