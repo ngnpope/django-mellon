@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
 import logging
 import datetime
 import importlib
@@ -99,7 +101,7 @@ def create_server(request):
                 try:
                     server.addProviderFromBuffer(lasso.PROVIDER_ROLE_IDP, idp['METADATA'])
                 except lasso.Error as e:
-                    logger.error(u'bad metadata in idp %s, %s', idp['ENTITY_ID'], e)
+                    logger.error('bad metadata in idp %s, %s', idp['ENTITY_ID'], e)
         cache[root] = server
         settings._MELLON_SERVER_CACHE = cache
     return settings._MELLON_SERVER_CACHE.get(root)

@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
 import pytest
 import mock
 import lasso
@@ -208,8 +210,8 @@ def test_sp_initiated_login_chosen(private_settings, client):
 def test_sp_initiated_login_requested_authn_context(private_settings, client):
     private_settings.MELLON_IDENTITY_PROVIDERS = [{
         'METADATA': open('tests/metadata.xml').read(),
-        'AUTHN_CLASSREF': [u'urn:be:fedict:iam:fas:citizen:eid',
-                           u'urn:be:fedict:iam:fas:citizen:token'],
+        'AUTHN_CLASSREF': ['urn:be:fedict:iam:fas:citizen:eid',
+                           'urn:be:fedict:iam:fas:citizen:token'],
     }]
     response = client.get('/login/')
     assert response.status_code == 302

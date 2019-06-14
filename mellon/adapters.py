@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
 from xml.etree import ElementTree as ET
 import hashlib
+
 import logging
 import os
 import threading
@@ -230,15 +233,15 @@ class DefaultAdapter(object):
         try:
             doc = ET.fromstring(metadata)
         except (TypeError, ET.ParseError):
-            logger.error(u'METADATA of %d-th idp is invalid', i)
+            logger.error('METADATA of %d-th idp is invalid', i)
             return None
         if doc.tag != '{%s}EntityDescriptor' % lasso.SAML2_METADATA_HREF:
-            logger.error(u'METADATA of %d-th idp has no EntityDescriptor root tag', i)
+            logger.error('METADATA of %d-th idp has no EntityDescriptor root tag', i)
             return None
 
         if 'entityID' not in doc.attrib:
             logger.error(
-                u'METADATA of %d-th idp has no entityID attribute on its root tag', i)
+                'METADATA of %d-th idp has no entityID attribute on its root tag', i)
             return None
         return doc.attrib['entityID']
 
@@ -264,12 +267,12 @@ class DefaultAdapter(object):
             username = force_text(username_template).format(
                 realm=realm, attributes=saml_attributes, idp=idp)[:30]
         except ValueError:
-            logger.error(u'invalid username template %r', username_template)
+            logger.error('invalid username template %r', username_template)
         except (AttributeError, KeyError, IndexError) as e:
             logger.error(
-                u'invalid reference in username template %r: %s', username_template, e)
+                'invalid reference in username template %r: %s', username_template, e)
         except Exception:
-            logger.exception(u'unknown error when formatting username')
+            logger.exception('unknown error when formatting username')
         else:
             return username
 
@@ -380,15 +383,15 @@ class DefaultAdapter(object):
                     logger.debug('looking for users by attribute %r and user field %r with value %r: not found',
                                  saml_attribute, user_field, value)
                     continue
-                logger.info(u'looking for user by attribute %r and user field %r with value %r: found %s',
+                logger.info('looking for user by attribute %r and user field %r with value %r: found %s',
                             saml_attribute, user_field, value, display_truncated_list(users_found))
                 users.update(users_found)
         if len(users) == 1:
             user = list(users)[0]
-            logger.info(u'looking for user by attributes %r: found user %s', lookup_by_attributes, user)
+            logger.info('looking for user by attributes %r: found user %s', lookup_by_attributes, user)
             return user
         elif len(users) > 1:
-            logger.warning(u'looking for user by attributes %r: too many users found(%d), failing',
+            logger.warning('looking for user by attributes %r: too many users found(%d), failing',
                            lookup_by_attributes, len(users))
         return None
 
@@ -413,10 +416,10 @@ class DefaultAdapter(object):
             try:
                 value = force_text(tpl).format(realm=realm, attributes=saml_attributes, idp=idp)
             except ValueError:
-                logger.warning(u'invalid attribute mapping template %r', tpl)
+                logger.warning('invalid attribute mapping template %r', tpl)
             except (AttributeError, KeyError, IndexError, ValueError) as e:
                 logger.warning(
-                    u'invalid reference in attribute mapping template %r: %s', tpl, e)
+                    'invalid reference in attribute mapping template %r: %s', tpl, e)
             else:
                 model_field = user._meta.get_field(field)
                 if hasattr(model_field, 'max_length'):
@@ -425,7 +428,7 @@ class DefaultAdapter(object):
                     old_value = getattr(user, field)
                     setattr(user, field, value)
                     attribute_set = True
-                    logger.info(u'set field %s of user %s to value %r (old value %r)', field, user, value, old_value)
+                    logger.info('set field %s of user %s to value %r (old value %r)', field, user, value, old_value)
         if attribute_set:
             user.save()
 
@@ -478,10 +481,10 @@ class DefaultAdapter(object):
                 groups.append(group)
             for group in Group.objects.filter(pk__in=[g.pk for g in groups]).exclude(user=user):
                 logger.info(
-                    u'adding group %s (%s) to user %s (%s)', group, group.pk, user, user.pk)
+                    'adding group %s (%s) to user %s (%s)', group, group.pk, user, user.pk)
                 User.groups.through.objects.get_or_create(group=group, user=user)
             qs = User.groups.through.objects.exclude(
                 group__pk__in=[g.pk for g in groups]).filter(user=user)
             for rel in qs:
-                logger.info(u'removing group %s (%s) from user %s (%s)', rel.group, rel.group.pk, rel.user, rel.user.pk)
+                logger.info('removing group %s (%s) from user %s (%s)', rel.group, rel.group.pk, rel.user, rel.user.pk)
             qs.delete()

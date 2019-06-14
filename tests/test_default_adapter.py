@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
 import datetime
 import re
 import lasso
@@ -120,9 +122,9 @@ def test_lookup_user_transaction(transactional_db, concurrency, idp, saml_attrib
 def test_provision_user_attributes(settings, django_user_model, idp, saml_attributes, caplog):
     settings.MELLON_IDENTITY_PROVIDERS = [idp]
     settings.MELLON_ATTRIBUTE_MAPPING = {
-        'email': u'{attributes[email][0]}',
-        'first_name': u'{attributes[first_name][0]}',
-        'last_name': u'{attributes[last_name][0]}',
+        'email': '{attributes[email][0]}',
+        'first_name': '{attributes[first_name][0]}',
+        'last_name': '{attributes[last_name][0]}',
     }
     user = SAMLBackend().authenticate(saml_attributes=saml_attributes)
     assert user.username == 'x' * 30
@@ -205,7 +207,7 @@ def test_provision_long_attribute(settings, django_user_model, idp, saml_attribu
     assert len(caplog.records) == 4
     assert 'created new user' in caplog.text
     assert 'set field first_name' in caplog.text
-    assert 'to value %r ' % (u'y' * 30) in caplog.text
+    assert 'to value %r ' % ('y' * 30) in caplog.text
     assert 'set field last_name' in caplog.text
     assert 'set field email' in caplog.text
 

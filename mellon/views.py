@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
 import logging
 import requests
 import lasso
@@ -114,9 +116,9 @@ class ProfileMixin(object):
 
     def show_message_status_is_not_success(self, profile, prefix):
         status_codes, idp_message = utils.get_status_codes_and_message(profile)
-        args = [u'%s: status is not success codes: %r', prefix, status_codes]
+        args = ['%s: status is not success codes: %r', prefix, status_codes]
         if idp_message:
-            args[0] += u' message: %s'
+            args[0] += ' message: %s'
             args.append(idp_message)
         self.log.warning(*args)
 
@@ -196,9 +198,9 @@ class LoginView(ProfileMixin, LogMixin, View):
             for at in ats.attribute:
                 values = attributes.setdefault(at.name, [])
                 for value in at.attributeValue:
-                    content = [any.exportToXml() for any in value.any]
-                    content = ''.join(content)
-                    values.append(lasso_decode(content))
+                    contents = [lasso_decode(any.exportToXml()) for any in value.any]
+                    content = ''.join(contents)
+                    values.append(content)
         attributes['issuer'] = login.remoteProviderId
         if login.nameIdentifier:
             name_id = login.nameIdentifier
@@ -295,8 +297,8 @@ class LoginView(ProfileMixin, LogMixin, View):
         try:
             login.initRequest(message, method)
         except lasso.ProfileInvalidArtifactError:
-            self.log.warning(u'artifact is malformed %r', artifact)
-            return HttpResponseBadRequest(u'artifact is malformed %r' % artifact)
+            self.log.warning('artifact is malformed %r', artifact)
+            return HttpResponseBadRequest('artifact is malformed %r' % artifact)
         except lasso.ServerProviderNotFoundError:
             self.log.warning('no entity id found for artifact %s', artifact)
             return HttpResponseBadRequest(
@@ -425,14 +427,15 @@ class LoginView(ProfileMixin, LogMixin, View):
                 # lasso>2.5.1 introduced a better API
                 if hasattr(authn_request.extensions, 'any'):
                     authn_request.extensions.any = (
-                        '<eo:next_url xmlns:eo="https://www.entrouvert.com/">%s</eo:next_url>' % eo_next_url,)
+                        str('<eo:next_url xmlns:eo="https://www.entrouvert.com/">%s</eo:next_url>' % eo_next_url),
+                    )
                 else:
                     authn_request.extensions.setOriginalXmlnode(
-                        '''<samlp:Extensions
+                        str('''<samlp:Extensions
                                  xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
                                  xmlns:eo="https://www.entrouvert.com/">
                                <eo:next_url>%s</eo:next_url>
-                            </samlp:Extensions>''' % eo_next_url
+                            </samlp:Extensions>''' % eo_next_url)
                     )
             self.set_next_url(next_url)
             self.add_login_hints(idp, authn_request, request=request, next_url=next_url)
@@ -502,7 +505,7 @@ class LogoutView(ProfileMixin, LogMixin, View):
             self.log.warning('error validating logout request: %r' % e)
         issuer = request.session.get('mellon_session', {}).get('issuer')
         if issuer == logout.remoteProviderId:
-            self.log.info(u'user logged out by IdP SLO request')
+            self.log.info('user logged out by IdP SLO request')
             auth.logout(request)
         try:
             logout.buildResponseMsg()
@@ -539,7 +542,7 @@ class LogoutView(ProfileMixin, LogMixin, View):
                     # set next_url after local logout, as the session is wiped by auth.logout
                     if logout:
                         self.set_next_url(next_url)
-                    self.log.info(u'user logged out, SLO request sent to IdP')
+                    self.log.info('user logged out, SLO request sent to IdP')
         else:
             self.log.warning('logout refused referer %r is not of the same origin', referer)
         return HttpResponseRedirect(next_url)

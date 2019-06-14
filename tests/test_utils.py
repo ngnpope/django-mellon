@@ -13,12 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
 import datetime
 
 import mock
 import lasso
 
 from mellon.utils import create_metadata, iso8601_to_datetime, flatten_datetime
+from mellon.views import check_next_url
 from xml_utils import assert_xml_constraints
 
 
@@ -84,9 +87,19 @@ def test_flatten_datetime():
     d = {
         'x': datetime.datetime(2010, 10, 10, 10, 10, 34),
         'y': 1,
-        'z': 'uu',
+        'z': 'u',
     }
     assert set(flatten_datetime(d).keys()) == set(['x', 'y', 'z'])
     assert flatten_datetime(d)['x'] == '2010-10-10T10:10:34'
     assert flatten_datetime(d)['y'] == 1
-    assert flatten_datetime(d)['z'] == 'uu'
+    assert flatten_datetime(d)['z'] == 'u'
+
+
+def test_check_next_url(rf):
+    assert not check_next_url(rf.get('/'), u'')
+    assert not check_next_url(rf.get('/'), None)
+    assert not check_next_url(rf.get('/'), u'\x00')
+    assert not check_next_url(rf.get('/'), u'\u010e')
+    assert not check_next_url(rf.get('/'), u'https://example.invalid/')
+    # default hostname is testserver
+    assert check_next_url(rf.get('/'), u'http://testserver/ok/')

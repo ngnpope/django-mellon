@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
+import datetime
 import re
 import base64
 import zlib
@@ -25,6 +28,7 @@ from pytest import fixture
 from django.core.urlresolvers import reverse
 from django.utils import six
 from django.utils.six.moves.urllib import parse as urlparse
+from django.utils.encoding import force_str
 
 from mellon.utils import create_metadata
 
@@ -100,10 +104,40 @@ class MockIdp(object):
             pass
         else:
             login.buildAssertion(lasso.SAML_AUTHENTICATION_METHOD_PASSWORD,
-                                 "FIXME",
-                                 "FIXME",
-                                 "FIXME",
-                                 "FIXME")
+                                 datetime.datetime.now().isoformat(),
+                                 None,
+                                 datetime.datetime.now().isoformat(),
+                                 datetime.datetime.now().isoformat())
+
+            def add_attribute(name, *values, **kwargs):
+                fmt = kwargs.get('fmt', lasso.SAML2_ATTRIBUTE_NAME_FORMAT_BASIC)
+                statements = login.response.assertion[0].attributeStatement or [lasso.Saml2AttributeStatement()]
+                statement = statements[0]
+                login.response.assertion[0].attributeStatement = statements
+                attributes = list(statement.attribute)
+                for attribute in attributes:
+                    if attribute.name == name and attribute.nameFormat == fmt:
+                        break
+                else:
+                    attribute = lasso.Saml2Attribute()
+                    attributes.append(attribute)
+                    statement.attribute = attributes
+                attribute_values = list(attribute.attributeValue)
+                atv = lasso.Saml2AttributeValue()
+                attribute_values.append(atv)
+                attribute.attributeValue = attribute_values
+                value_any = []
+                for value in values:
+                    if isinstance(value, lasso.Node):
+                        value_any.append(value)
+                    else:
+                        mtn = lasso.MiscTextNode.newWithString(force_str(value))
+                        mtn.textChild = True
+                        value_any.append(mtn)
+                atv.any = value_any
+            add_attribute('email', 'john', '.doe@gmail.com')
+            add_attribute('wtf', 'john', lasso.MiscTextNode.newWithXmlNode('<a>coucou</a>'))
+
         if not auth_result and msg:
             login.response.status.statusMessage = msg
         if login.protocolProfile == lasso.LOGIN_PROTOCOL_PROFILE_BRWS_ART:
@@ -174,7 +208,7 @@ def test_sso_request_denied(db, app, idp, caplog, sp_settings):
     url, body, relay_state = idp.process_authn_request_redirect(
         response['Location'],
         auth_result=False,
-        msg=u'User is not allowed to login')
+        msg='User is not allowed to login')
     assert not relay_state
     assert url.endswith(reverse('mellon_login'))
     response = app.post(reverse('mellon_login'), params={'SAMLResponse': body, 'RelayState': relay_state})
@@ -195,7 +229,7 @@ def test_sso_request_denied_artifact(db, app, caplog, sp_settings, idp_metadata,
     url, body, relay_state = idp.process_authn_request_redirect(
         response['Location'],
         auth_result=False,
-        msg=u'User is not allowed to login')
+        msg='User is not allowed to login')
     assert not relay_state
     assert body is None
     assert reverse('mellon_login') in url
