@@ -115,7 +115,7 @@ class MockIdp(object):
             del self.artifact_message
         login.buildResponseMsg()
         assert 'rsa-sha256' in login.msgBody
-        return login.msgBody
+        return '<?xml version="1.0"?>\n' + login.msgBody
 
     def mock_artifact_resolver(self):
         @all_requests

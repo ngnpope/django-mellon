@@ -255,11 +255,18 @@ def login(request, user):
 
 def get_xml_encoding(content):
     xml_encoding = 'utf-8'
+
     def xmlDeclHandler(version, encoding, standalone):
-        xml_encoding = encoding
+        global xml_encoding
+
+        if encoding:
+            xml_encoding = encoding
     parser = expat.ParserCreate()
     parser.XmlDeclHandler = xmlDeclHandler
-    parser.Parse(content, True)
+    try:
+        parser.Parse(content, True)
+    except expat.ExpatError as e:
+        raise ValueError('invalid XML %s' % e)
     return xml_encoding
 
 
