@@ -190,8 +190,8 @@ class DefaultAdapter(object):
                 if metadata_cache_time:
                     stale_timeout = 24 * metadata_cache_time
                     if last_update and (now - idp['METADATA_URL_LAST_UPDATE']) > stale_timeout:
-                        logger.error('metadata url %s : not updated since %.1f hours',
-                                     stale_timeout / 3600.0)
+                        logger.error('metadata url %s: not updated since %.1f hours',
+                                     url, stale_timeout / 3600.0)
 
         # we have cache, update in background
         if last_update and 'METADATA' in idp:
