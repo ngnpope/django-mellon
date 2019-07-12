@@ -34,6 +34,9 @@ class PassiveAuthenticationMiddleware(object):
         return response
 
     def process_view(self, request, view_func, view_args, view_kwargs):
+        # Skip AJAX requests
+        if request.is_ajax():
+            return
         # Skip views asking to be skiped
         if getattr(view_func, 'mellon_no_passive', False):
             return
