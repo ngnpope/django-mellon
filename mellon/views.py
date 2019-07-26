@@ -124,6 +124,10 @@ class ProfileMixin(object):
 
 
 class LoginView(ProfileMixin, LogMixin, View):
+    @property
+    def template_base(self):
+        return self.kwargs.get('template_base', 'base.html')
+
     def get_idp(self, request):
         entity_id = request.POST.get('entityID') or request.GET.get('entityID')
         if not entity_id:
@@ -182,6 +186,7 @@ class LoginView(ProfileMixin, LogMixin, View):
         next_url = error_url or self.get_next_url(default=resolve_url(settings.LOGIN_REDIRECT_URL))
         return render(request, 'mellon/authentication_failed.html',
                       {
+                          'template_base': self.template_base,
                           'debug': settings.DEBUG,
                           'reason': reason,
                           'status_codes': status_codes,
@@ -249,12 +254,15 @@ class LoginView(ProfileMixin, LogMixin, View):
                 self.log.warning('user %s (NameID is %r) is inactive, login refused', user,
                                  attributes['name_id_content'])
                 return render(request, 'mellon/inactive_user.html', {
+                    'template_base': self.template_base,
                     'user': user,
                     'saml_attributes': attributes})
         else:
             self.log.warning('no user found for NameID %r', attributes['name_id_content'])
-            return render(request, 'mellon/user_not_found.html',
-                          {'saml_attributes': attributes})
+            return render(request, 'mellon/user_not_found.html', {
+                              'template_base': self.template_base,
+                              'saml_attributes': attributes
+                          })
         request.session['lasso_session_dump'] = login.session.dump()
 
         return HttpResponseRedirect(next_url)
@@ -374,7 +382,8 @@ class LoginView(ProfileMixin, LogMixin, View):
         url = app_settings.DISCOVERY_SERVICE_URL
         params = {
             # prevent redirect loops with the discovery service
-            'entityID': request.build_absolute_uri(reverse('mellon_metadata')),
+            'entityID': request.build_absolute_uri(
+                reverse('mellon_metadata')),
             'return': return_url,
         }
         if is_passive:

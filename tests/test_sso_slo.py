@@ -23,6 +23,7 @@ import xml.etree.ElementTree as ET
 
 import lasso
 
+import pytest
 from pytest import fixture
 
 from django.utils import six
@@ -219,6 +220,27 @@ def test_sso_request_denied(db, app, idp, caplog, sp_settings):
     else:
         assert "status is not success codes: [u'urn:oasis:names:tc:SAML:2.0:status:Responder',\
  u'urn:oasis:names:tc:SAML:2.0:status:RequestDenied']" in caplog.text
+
+
+@pytest.mark.urls('urls_tests_template_base')
+def test_template_base(db, app, idp, caplog, sp_settings):
+    response = app.get(reverse('mellon_login'))
+    url, body, relay_state = idp.process_authn_request_redirect(
+        response['Location'],
+        auth_result=False,
+        msg='User is not allowed to login')
+    response = app.post(reverse('mellon_login'), params={'SAMLResponse': body, 'RelayState': relay_state})
+    assert 'Theme is ok' in response.text
+
+
+def test_no_template_base(db, app, idp, caplog, sp_settings):
+    response = app.get(reverse('mellon_login'))
+    url, body, relay_state = idp.process_authn_request_redirect(
+        response['Location'],
+        auth_result=False,
+        msg='User is not allowed to login')
+    response = app.post(reverse('mellon_login'), params={'SAMLResponse': body, 'RelayState': relay_state})
+    assert 'Theme is ok' not in response.text
 
 
 def test_sso_request_denied_artifact(db, app, caplog, sp_settings, idp_metadata, idp_private_key, rf):
