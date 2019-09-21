@@ -24,7 +24,8 @@ class UserSAMLIdentifier(models.Model):
     user = models.ForeignKey(
         verbose_name=_('user'),
         to=settings.AUTH_USER_MODEL,
-        related_name='saml_identifiers')
+        related_name='saml_identifiers',
+        on_delete=models.CASCADE)
     issuer = models.TextField(
         verbose_name=_('Issuer'))
     name_id = models.TextField(

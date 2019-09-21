@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('issuer', models.TextField(verbose_name='Issuer')),
                 ('name_id', models.TextField(verbose_name='SAML identifier')),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='created')),
-                ('user', models.ForeignKey(related_name='saml_identifiers', verbose_name='user', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(related_name='saml_identifiers', verbose_name='user', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name': 'user SAML identifier',
