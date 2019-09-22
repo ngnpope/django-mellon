@@ -231,7 +231,7 @@ SAML 2.0 specification.
 MELLON_GROUP_ATTRIBUTE
 ----------------------
 
-Name of the SAML attribute to map to Django group names, default is None. Ex.:
+Name of the SAML attribute to map to Django group names, default is None. Ex.::
 
    MELLON_GROUP_ATTRIBUTE = 'role'
 
