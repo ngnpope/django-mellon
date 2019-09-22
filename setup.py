@@ -97,7 +97,7 @@ setup(name="django-mellon",
           'atomicwrites',
       ],
       setup_requires=[
-          'django>=1.7,<2.3',
+          'django>=1.7,<2',
       ],
       tests_require=[
           'nose>=0.11.4',
