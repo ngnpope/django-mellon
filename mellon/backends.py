@@ -21,7 +21,8 @@ from . import utils
 
 
 class SAMLBackend(ModelBackend):
-    def authenticate(self, saml_attributes, request=None):
+    def authenticate(self, request=None, **credentials):
+        saml_attributes = credentials.get('saml_attributes')
         # without an issuer we can do nothing
         if 'issuer' not in saml_attributes:
             return
