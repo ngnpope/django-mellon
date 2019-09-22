@@ -286,7 +286,7 @@ Each dictionnary is a rule for linking, applying all the rules should only
 return one user, the boolean operator OR is applied between the rules.
 
 So for example if you received a SAML attribute named `email` and you want to
-link user with the same email you would configured it like that:
+link user with the same email you would configured it like that::
 
    MELLON_LOOKUP_BY_ATTRIBUTES = [
        {
@@ -306,7 +306,7 @@ When using METADATA_URL to reference a metadata file, it's the duration in
 secondes between refresh of the metadata file. Default is 3600 seconds, 1 hour.
 
 METTON_METADATA_HTTP_TIMEOUT
----------------------------
+----------------------------
 
 Timeout in seconds for HTTP call made to retrieve metadata files. Default is 10
 seconds.
