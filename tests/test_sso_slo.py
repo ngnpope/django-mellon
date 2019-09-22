@@ -25,7 +25,11 @@ import lasso
 
 from pytest import fixture
 
-from django.core.urlresolvers import reverse
+import django
+if django.VERSION >= (1, 11, 0):
+    from django.urls import reverse
+else:
+    from django.core.urlresolvers import reverse
 from django.utils import six
 from django.utils.six.moves.urllib import parse as urlparse
 from django.utils.encoding import force_str

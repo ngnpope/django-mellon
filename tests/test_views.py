@@ -24,7 +24,11 @@ import random
 import hashlib
 from httmock import HTTMock
 
-from django.core.urlresolvers import reverse
+import django
+if django.VERSION >= (1, 11, 0):
+    from django.urls import reverse
+else:
+    from django.core.urlresolvers import reverse
 from django.utils.encoding import force_text
 from django.utils.http import urlencode
 
