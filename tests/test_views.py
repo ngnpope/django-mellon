@@ -25,14 +25,12 @@ import hashlib
 from httmock import HTTMock
 
 import django
-if django.VERSION >= (1, 11, 0):
-    from django.urls import reverse
-else:
-    from django.core.urlresolvers import reverse
 from django.utils.encoding import force_text
 from django.utils.http import urlencode
 
 from xml_utils import assert_xml_constraints
+
+from mellon.compat import reverse
 
 from utils import error_500, html_response
 

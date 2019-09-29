@@ -17,9 +17,9 @@ from __future__ import unicode_literals
 
 from django.utils.http import urlencode
 from django.http import HttpResponseRedirect
-from django.core.urlresolvers import reverse
 
 from . import app_settings, utils
+from .compat import reverse
 
 PASSIVE_TRIED_COOKIE = 'MELLON_PASSIVE_TRIED'
 

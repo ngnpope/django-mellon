@@ -25,11 +25,6 @@ import lasso
 
 from pytest import fixture
 
-import django
-if django.VERSION >= (1, 11, 0):
-    from django.urls import reverse
-else:
-    from django.core.urlresolvers import reverse
 from django.utils import six
 from django.utils.six.moves.urllib import parse as urlparse
 from django.utils.encoding import force_str
@@ -37,6 +32,8 @@ from django.utils.encoding import force_str
 from mellon.utils import create_metadata
 
 from httmock import all_requests, HTTMock, response as mock_response
+
+from mellon.compat import reverse
 
 from utils import reset_caplog
 

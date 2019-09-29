@@ -24,11 +24,6 @@ from xml.sax.saxutils import escape
 import xml.etree.ElementTree as ET
 
 
-import django
-if django.VERSION < (1, 11, 0):
-    from django.core.urlresolvers import reverse
-else:
-    from django.urls import reverse
 from django.views.generic import View
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, HttpResponse
 from django.contrib import auth
@@ -43,6 +38,7 @@ from django.db import transaction
 from django.utils.translation import ugettext as _
 
 from . import app_settings, utils
+from .compat import reverse
 
 RETRY_LOGIN_COOKIE = 'MELLON_RETRY_LOGIN'
 
