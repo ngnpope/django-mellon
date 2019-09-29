@@ -21,12 +21,14 @@ if hasattr(global_settings, 'MIDDLEWARE_CLASSES'):
     MIDDLEWARE_CLASSES += (
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'mellon.middleware.PassiveAuthenticationMiddleware',
     )
 else:
     MIDDLEWARE = global_settings.MIDDLEWARE
     MIDDLEWARE += (
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'mellon.middleware.PassiveAuthenticationMiddleware',
     )
 
 AUTHENTICATION_BACKENDS = (

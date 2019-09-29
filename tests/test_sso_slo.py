@@ -373,3 +373,31 @@ def test_sso_slo_pass_login_hints_backoffice(db, app, idp, caplog, sp_settings):
         login_hints = root.findall('.//{https://www.entrouvert.com/}login-hint')
         assert len(login_hints) == 1, 'missing login hint'
         assert login_hints[0].text == 'backoffice', 'login hint is not backoffice'
+
+
+def test_middleware_mixin_first_time(db, app, idp, caplog, settings):
+    settings.MELLON_OPENED_SESSION_COOKIE_NAME = 'IDP_SESSION'
+    assert 'MELLON_PASSIVE_TRIED' not in app.cookies
+    # webtest-lint is against unicode
+    app.set_cookie(str('IDP_SESSION'), str('1'))
+    response = app.get('/', status=302)
+    assert urlparse.urlparse(response.location).path == '/login/'
+    assert (urlparse.parse_qs(urlparse.urlparse(response.location).query, keep_blank_values=True)
+            == {'next': ['http://testserver/'], 'passive': ['']})
+
+    # simulate closing of session at IdP
+    app.cookiejar.clear('testserver.local', '/', 'IDP_SESSION')
+    assert 'IDP_SESSION' not in app.cookies
+
+    # verify MELLON_PASSIVE_TRIED is removed
+    assert 'MELLON_PASSIVE_TRIED' in app.cookies
+    response = app.get('/', status=200)
+    assert 'MELLON_PASSIVE_TRIED' not in app.cookies
+
+    # check passive authentication is tried again
+    app.set_cookie(str('IDP_SESSION'), str('1'))
+    response = app.get('/', status=302)
+    assert urlparse.urlparse(response.location).path == '/login/'
+    assert (urlparse.parse_qs(urlparse.urlparse(response.location).query, keep_blank_values=True)
+            == {'next': ['http://testserver/'], 'passive': ['']})
+    assert 'MELLON_PASSIVE_TRIED' in app.cookies

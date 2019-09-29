@@ -13,14 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from django.conf.urls import url, include
-from django.http import HttpResponse
+import django
+if django.VERSION < (1, 11, 0):
+    from django.core.urlresolvers import reverse
+    MiddlewareClass = object
 
+    is_authenticated = lambda user: user.is_authenticated()
+else:
+    from django.urls import reverse
+    from django.utils.deprecation import MiddlewareMixin
+    MiddlewareClass = MiddlewareMixin
 
-def homepage(request):
-    return HttpResponse('ok')
-
-urlpatterns = [
-    url('^', include('mellon.urls')),
-    url('^$', homepage, name='homepage'),
-]
+    is_authenticated = lambda user: user.is_authenticated
