@@ -42,6 +42,28 @@ def test_create_metadata(rf, private_settings, caplog):
         ('/sm:EntityDescriptor[@entityID="http://testserver/metadata/"]', 1,
          ('/*', 1),
          ('/sm:SPSSODescriptor', 1,
+          ('/*', 6),
+          ('/sm:NameIDFormat', 1),
+          ('/sm:SingleLogoutService', 1),
+          ('/sm:AssertionConsumerService[@isDefault=\'true\'][@Binding=\'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact\']', 1),
+          ('/sm:AssertionConsumerService[@isDefault=\'true\'][@Binding=\'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\']',
+           0),
+          ('/sm:AssertionConsumerService[@Binding=\'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\']',
+           1),
+          ('/sm:KeyDescriptor/ds:KeyInfo/ds:X509Data', 2,
+           ('/ds:X509Certificate', 2),
+           ('/ds:X509Certificate[text()=\'xxx\']', 1),
+           ('/ds:X509Certificate[text()=\'yyy\']', 1)))),
+        namespaces=ns)
+
+    private_settings.MELLON_METADATA_PUBLISH_DISCOVERY_RESPONSE = True
+    with mock.patch('mellon.utils.open', mock.mock_open(read_data='BEGIN\nyyy\nEND'), create=True):
+        metadata = create_metadata(request)
+    assert_xml_constraints(
+        metadata.encode('utf-8'),
+        ('/sm:EntityDescriptor[@entityID="http://testserver/metadata/"]', 1,
+         ('/*', 1),
+         ('/sm:SPSSODescriptor', 1,
           ('/*', 7),
           ('/sm:Extensions', 1,
            ('/idpdisc:DiscoveryResponse', 1)),

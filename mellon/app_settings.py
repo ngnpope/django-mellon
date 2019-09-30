@@ -43,6 +43,7 @@ class AppSettings(object):
         'LOOKUP_BY_ATTRIBUTES': [],
         'METADATA_CACHE_TIME': 3600,
         'METADATA_HTTP_TIMEOUT': 10,
+        'METADATA_PUBLISH_DISCOVERY_RESPONSE': False,
     }
 
     @property

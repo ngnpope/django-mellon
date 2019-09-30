@@ -49,7 +49,8 @@ def create_metadata(request):
             public_key = ''.join(content.splitlines()[1:-1])
         public_keys.append(public_key)
     name_id_formats = app_settings.NAME_ID_FORMATS
-    return render_to_string('mellon/metadata.xml', {
+    ctx = {
+        'request': request,
         'entity_id': request.build_absolute_uri(entity_id),
         'login_url': request.build_absolute_uri(login_url),
         'logout_url': request.build_absolute_uri(logout_url),
@@ -58,8 +59,11 @@ def create_metadata(request):
         'default_assertion_consumer_binding': app_settings.DEFAULT_ASSERTION_CONSUMER_BINDING,
         'organization': app_settings.ORGANIZATION,
         'contact_persons': app_settings.CONTACT_PERSONS,
-        'discovery_endpoint_url': request.build_absolute_uri(reverse('mellon_login')),
-    })
+    }
+    if app_settings.METADATA_PUBLISH_DISCOVERY_RESPONSE:
+        ctx['discovery_endpoint_url'] = request.build_absolute_uri(
+            reverse('mellon_login'))
+    return render_to_string('mellon/metadata.xml', ctx)
 
 
 def create_server(request):

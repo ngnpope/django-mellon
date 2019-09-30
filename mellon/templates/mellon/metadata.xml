@@ -6,12 +6,14 @@
    AuthnRequestsSigned="true"
    WantAssertionsSigned="true"
    protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+   {% if discovery_endpoint_url %}
     <Extensions>
       <idpdisc:DiscoveryResponse index="1"
         xmlns:idpdisc="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
         Binding="urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol"
         Location="{{ discovery_endpoint_url }}"/>
-   </Extensions>
+      </Extensions>
+   {% endif %}
      {% for public_key in public_keys %}
        <KeyDescriptor>
            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
