@@ -37,6 +37,9 @@ class PassiveAuthenticationMiddleware(MiddlewareClass):
         # Skip AJAX requests
         if request.is_ajax():
             return
+        # Skip AJAX and media/script requests, unless mellon_no_passive is False on the view
+        if getattr(view_func, 'mellon_no_passive', True) and 'text/html' not in request.META.get('HTTP_ACCEPT', ''):
+            return
         # Skip views asking to be skiped
         if getattr(view_func, 'mellon_no_passive', False):
             return
