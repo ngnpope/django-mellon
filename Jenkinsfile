@@ -35,7 +35,7 @@ pipeline {
         always {
             script {
                 utils = new Utils()
-                utils.mail_notify(currentBuild, env, 'admin+jenkins-django-mellon@entrouvert.com')
+                utils.mail_notify(currentBuild, env, 'ci+jenkins-django-mellon@entrouvert.org')
             }
         }
         success {
