@@ -36,6 +36,8 @@ def merge_results(xml_files):
     for file_name in xml_files:
         tree = ET.parse(file_name)
         test_suite = tree.getroot()
+        if test_suite.tag == 'testsuites':
+            test_suite = test_suite.getchildren()[0]
         failures += int(test_suite.attrib['failures'])
         tests += int(test_suite.attrib['tests'])
         errors += int(test_suite.attrib['errors'])
