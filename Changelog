@@ -1,3 +1,166 @@
+1.9
+---
+
+- use MiddlewareMixin on middleware (#36509)
+- factorize compatibility layer (#36509)
+- jenkins: use ci@entrouvert.org for notifications
+- build: adapt merge-junit-results to latest pytest/3 <testsuites> element
+- tox: allow latest pytest
+- make DiscoveryResponse optional in metadata (#15260)
+
+1.8
+---
+
+- misc: limit setup_requires to django 1.11, to still be ok with py2
+
+1.7
+---
+
+- backends: accept being called with None as saml_attributes (#36330)
+
+1.6
+---
+
+- misc: mark MELLON_GROUP_ATTRIBUTE as code block in README
+- misc: remove unmaintained "changes" section of README
+- misc: fix reStructuredText syntax of README
+
+1.5
+---
+
+- misc: lower django version to 1.7 in setup.py, to build on jessie
+- misc: update authenticate() for compatibility from 1.8 to 2.2 (#36330)
+- tox: use newer django-webtest for newer django versions
+- tests: update for compatibility with django 2.2 (#36330)
+- misc: update setup.py with new django requirements
+
+1.4
+---
+
+- tox: run tests against django 2.2 (#36330)
+- misc: add support for new django.urls module (#36330)
+- misc: add on_delete parameter to foreign keys (#36330)
+
+1.3
+---
+
+- middleware: prevent passive authentication on ajax requests (#34781)
+
+1.2.24 .. 1.2.46
+----------------
+
+- use unicode_literals (#34008)
+- adapters: add missing argument to log (#34333)
+- misc: catch all unicode exceptions when checking next_url (#33083)
+- do not warn about stale cache if not cache timeout is defined (#34319)
+- update and cache metadata from URL and path (#10196)
+- code style (#10196)
+- really retrieve XML encoding (#10196)
+- adapters: abstract user queryset (#33739)
+- add user lookup by attributes (#33739)
+- adapters: factorize user linking (#33739)
+- simplify workflow in DefaultAdapter.lookup_user() (#33739)
+- add setting MELLON_SIGNATURE_METHOD (#32008)
+- debian: bump debhelper compatibility level (#32260)
+- tests: use RSA-SHA256 certificates (fixes #31963)
+- tests: test failed request path with artifact (#31690)
+- update sso_failure call to new method signature (#31690)
+- views: fix discovery URL building (#31581)
+- views: keep next URL on disco requests (fixes #31043)
+- views: add new setting LOGIN_HINTS (fixes #30966)
+- views: PEP8ness (#30966)
+- prevent redirection loop on artifact resolution errors (fixes #14810)
+- use Jenkinsfile (#14810)
+- debian: add python3-django-mellon; use pybuild (#30494)
+- backends: add request argument to authenticate (fixes #30541)
+- backends: PEP8ness, copyright (#30451)
+- tox: limit pytest version to a version compatible with pytest-cov
+- don't cache local metadata anymore (#13881)
+- don't use RelayState as continuation URL in case of errors (#25522)
+- skip test if number of concurrent connections above default pg limit (#25252)
+- tests: adapt to lasso PEM-formatting deprecation (#24531)
+- use good API from lasso to set Extensions node content (#23003)
+- use force_text for python2/3 compatibility (#24139)
+- pin django-webtest (#23603)
+- tox: let getlasso3 work with all python3 versions
+- tox: also run tests against python 3
+- tests: adapt to python 3
+- python3: get metadata from URL as a string
+- python3: use urlparse compatibility module in tests
+- python3: always use %s to get user representation in logs
+- python3: handle differences in lasso/py2/py3 encodings
+- python3: adjust unicode usage
+- python3: add detection of xml encoding
+- python3: don't use iteritems
+- python3: use open() to open files
+- tests: don't use a leading 0 in numbers
+- tests: prevent "Database is locked" error during concurrency test (fixes #19678)
+- set a default value for IDENTITY_PROVIDERS ((fixes #20221)
+- do not raise ImproperlyConfigured on acces to app_settings.IDENTITY_PROVIDERS (fixes #20221)
+- misc: disable AuthnRequest eo:next_url Extensions by default (fixes #20229)
+- move tag Extensions in metadata template (fixes #21923)
+- Revert "support federation file loading (#19396)"
+- support federation file loading (#19396)
+- tests: also run for django 1.11 (#19659)
+- tests: remove django < 1.8 leftovers (#19659)
+- tox.ini: remove pytest-catchlog merged in the core of pytest (fixes #21057)
+- limit to django 1.11
+- misc: update exception handling for Python 3 (#20925)
+- misc: update missing-django message for Python 3 (#20925)
+- middleware: improve condition to automatically determine a common domain (fixes #15548)
+- tests: fix discovery service tests (#19018 #19016)
+- views: send entityID to discovery service (fixes #19016)
+- views: add nodisco=1 to discovery service return url (fixes #19018)
+- add a timeout to artifact resolve HTTP calls (fixes #18098)
+- misc: include target URL in AuthnRequest Extensions node (#18452)
+- misc: update setup.py to be compatible with python 3 (#17958)
+- use django facilities to get hostname from request (#16525)
+- misc: remove usage of urls.patterns for django 1.8 and later (#15959)
+- add a jenkins.sh
+- tests: replace unmaintained pytest-capturelog by its maintained fork pytest-catchlog
+- tox.ini: drop support for Django 1.7
+- tests: adapt to changes in django-webtest
+- minor documentation update (#15443)
+- allow an adapter to adapt auth.login() (#14476)
+- misc: remove south migrations (#14064)
+- add logging of IdP SAML responses and looked up users (#14056)
+- translation update
+- allow views to refuse passive login (fixes #13627)
+- retry login when artifact resolution return an empty message (fixes #12795)
+- add note on MELLON_DEFAULT_ASSERTION_CONSUMER_BINDING
+- views: gracefully handle logout errors (fixes #11449)
+- utils: fix handling of multiple private keys (fixes #11475)
+- tests: use dummy metadata from lasso, starts tests of SSO/SLO (fixes #11476)
+- misc: force another auth.logout() after coming back from the IdP (#11394)
+- middleware: don't fail on unnamed URLs (#11319)
+- make login/logout URL names into settings (#10867)
+- release 1.2.26
+- allow federating transient NameID using an attribute (fixes #10619)
+- README: rewrite section on tests to indicate the use of tox
+- README: add changes section
+- misc: allow unicode strings as authn classref (#10666)
+- debian: declare dependency on python-isodata
+- misc: handle lasso.LoginStatusNotSuccessError (#10633)
+- replace dateutil by isodate (#10196)
+- tox.ini: use workdir outside project dir
+- when status is not 200, report a fragment of the response (fixes #10270)
+- views: wrap login view in non_atomic_requests to allow fine control of transactions' commit (fixes #10604)
+- add support for artifact POST (#10596)
+- log partial logout error as a warning (fixes #10408)
+- pep8ness
+- setup.py: replace distutils sdist by setuptools version
+- refactor next_url and RelayState use (fixes #10372)
+- always consider relative URLs as being of the same origin (fixes #10371)
+- modify testsettings for Django 1.9
+- views: handle ProfileInvalidMsgError when resolving an artifact (#10270)
+- views: handle ProfileInvalidArtifactError exception when resolving an artifact (#10270)
+- tests: move HTTMock templates to utils
+- tests: add base.html template
+- misc: fix passing of RequestedAuthnContext (#10243)
+- tests: fix test to comply with commit eb89a86ef
+- debian: add ${python:Depends} to control file
+- add DiscoveryResponse endpoint to metadata (fixes #10197)
+
 1.2.24
 ------
 
