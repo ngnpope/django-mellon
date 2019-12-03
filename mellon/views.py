@@ -446,7 +446,7 @@ class LoginView(ProfileMixin, LogMixin, View):
                             </samlp:Extensions>''' % eo_next_url)
                     )
             self.set_next_url(next_url)
-            self.add_login_hints(idp, authn_request, request=request, next_url=next_url)
+            self.add_login_hints(idp, authn_request, request=request, next_url=next_url or '/')
             login.buildAuthnRequestMsg()
         except lasso.Error as e:
             return HttpResponseBadRequest('error initializing the authentication request: %r' % e)
@@ -469,14 +469,14 @@ class LoginView(ProfileMixin, LogMixin, View):
 
     def is_in_backoffice(self, request, next_url):
         path = utils.get_local_path(request, next_url)
-        return path.startswith(('/admin/', '/manage/', '/manager/'))
+        return path and path.startswith(('/admin/', '/manage/', '/manager/'))
 
     def add_login_hints(self, idp, authn_request, request, next_url=None):
         login_hints = utils.get_setting(idp, 'LOGIN_HINTS', [])
         hints = []
         for login_hint in login_hints:
             if login_hint == 'backoffice':
-                if self.is_in_backoffice(request, next_url):
+                if next_url and self.is_in_backoffice(request, next_url):
                     hints.append('backoffice')
             if login_hint == 'always_backoffice':
                 hints.append('backoffice')

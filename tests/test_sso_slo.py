@@ -382,6 +382,13 @@ def test_sso_slo_pass_login_hints_always_backoffice(db, app, idp, caplog, sp_set
 
 def test_sso_slo_pass_login_hints_backoffice(db, app, idp, caplog, sp_settings):
     sp_settings.MELLON_LOGIN_HINTS = ['backoffice']
+
+    response = app.get(reverse('mellon_login'))
+    url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
+    root = ET.fromstring(idp.request)
+    login_hints = root.findall('.//{https://www.entrouvert.com/}login-hint')
+    assert len(login_hints) == 0
+
     response = app.get(reverse('mellon_login') + '?next=/whatever/')
     url, body, relay_state = idp.process_authn_request_redirect(response['Location'])
     root = ET.fromstring(idp.request)
