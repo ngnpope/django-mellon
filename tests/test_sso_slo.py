@@ -402,7 +402,7 @@ def test_middleware_mixin_first_time(db, app, idp, caplog, settings):
     assert 'MELLON_PASSIVE_TRIED' not in app.cookies
     # webtest-lint is against unicode
     app.set_cookie(str('IDP_SESSION'), str('1'))
-    response = app.get('/', status=302)
+    response = app.get('/', headers={'Accept': force_str('text/html')}, status=302)
     assert urlparse.urlparse(response.location).path == '/login/'
     assert (urlparse.parse_qs(urlparse.urlparse(response.location).query, keep_blank_values=True)
             == {'next': ['http://testserver/'], 'passive': ['']})
@@ -418,7 +418,7 @@ def test_middleware_mixin_first_time(db, app, idp, caplog, settings):
 
     # check passive authentication is tried again
     app.set_cookie(str('IDP_SESSION'), str('1'))
-    response = app.get('/', status=302)
+    response = app.get('/', headers={'Accept': force_str('text/html')}, status=302)
     assert urlparse.urlparse(response.location).path == '/login/'
     assert (urlparse.parse_qs(urlparse.urlparse(response.location).query, keep_blank_values=True)
             == {'next': ['http://testserver/'], 'passive': ['']})
