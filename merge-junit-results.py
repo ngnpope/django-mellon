@@ -36,12 +36,10 @@ def merge_results(xml_files):
     for file_name in xml_files:
         tree = ET.parse(file_name)
         test_suite = tree.getroot()
-        if test_suite.tag == 'testsuites':
-            test_suite = test_suite.getchildren()[0]
-        failures += int(test_suite.attrib['failures'])
-        tests += int(test_suite.attrib['tests'])
-        errors += int(test_suite.attrib['errors'])
-        time += float(test_suite.attrib['time'])
+        failures += int(test_suite.attrib.get('failures', '0'))
+        tests += int(test_suite.attrib.get('tests', '0'))
+        errors += int(test_suite.attrib.get('errors', '0'))
+        time += float(test_suite.attrib.get('time', '0.'))
         name = test_suite.attrib.get('name', '')
         for child in test_suite.getchildren():
             child.attrib['classname'] = '%s-%s' % (name, child.attrib.get('classname', ''))
