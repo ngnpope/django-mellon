@@ -128,6 +128,12 @@ class LoginView(ProfileMixin, LogMixin, View):
     def template_base(self):
         return self.kwargs.get('template_base', 'base.html')
 
+    def render(self, request, template_names, context):
+        context['template_base'] = self.template_base
+        if 'context_hook' in self.kwargs:
+            self.kwargs['context_hook'](context)
+        return render(request, template_names, context)
+
     def get_idp(self, request):
         entity_id = request.POST.get('entityID') or request.GET.get('entityID')
         if not entity_id:
@@ -184,9 +190,8 @@ class LoginView(ProfileMixin, LogMixin, View):
         if error_url:
             error_url = resolve_url(error_url)
         next_url = error_url or self.get_next_url(default=resolve_url(settings.LOGIN_REDIRECT_URL))
-        return render(request, 'mellon/authentication_failed.html',
+        return self.render(request, 'mellon/authentication_failed.html',
                       {
-                          'template_base': self.template_base,
                           'debug': settings.DEBUG,
                           'reason': reason,
                           'status_codes': status_codes,
@@ -253,14 +258,12 @@ class LoginView(ProfileMixin, LogMixin, View):
             else:
                 self.log.warning('user %s (NameID is %r) is inactive, login refused', user,
                                  attributes['name_id_content'])
-                return render(request, 'mellon/inactive_user.html', {
-                    'template_base': self.template_base,
+                return self.render(request, 'mellon/inactive_user.html', {
                     'user': user,
                     'saml_attributes': attributes})
         else:
             self.log.warning('no user found for NameID %r', attributes['name_id_content'])
-            return render(request, 'mellon/user_not_found.html', {
-                              'template_base': self.template_base,
+            return self.render(request, 'mellon/user_not_found.html', {
                               'saml_attributes': attributes
                           })
         request.session['lasso_session_dump'] = login.session.dump()

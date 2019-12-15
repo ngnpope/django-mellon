@@ -233,6 +233,18 @@ def test_template_base(db, app, idp, caplog, sp_settings):
     assert 'Theme is ok' in response.text
 
 
+@pytest.mark.urls('urls_tests_template_hook')
+def test_template_hook(db, app, idp, caplog, sp_settings):
+    response = app.get(reverse('mellon_login'))
+    url, body, relay_state = idp.process_authn_request_redirect(
+        response['Location'],
+        auth_result=False,
+        msg='User is not allowed to login')
+    response = app.post(reverse('mellon_login'), params={'SAMLResponse': body, 'RelayState': relay_state})
+    assert 'Theme is ok' in response.text
+    assert 'HOOK' in response.text
+
+
 def test_no_template_base(db, app, idp, caplog, sp_settings):
     response = app.get(reverse('mellon_login'))
     url, body, relay_state = idp.process_authn_request_redirect(
