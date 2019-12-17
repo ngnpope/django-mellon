@@ -146,7 +146,7 @@ class DefaultAdapter(object):
                         idp['METADATA'] = fd.read()
                     # use file cache mtime as last_update time, prevent too many loading from different workers
                     last_update = max(last_update, os.stat(file_cache_path).st_mtime)
-                except OSError:
+                except (IOError, OSError):
                     warning('metadata url %s : error when loading the file cache %s', url, file_cache_path)
 
         # fresh cache, skip loading
