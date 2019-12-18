@@ -495,7 +495,7 @@ login = transaction.non_atomic_requests(csrf_exempt(LoginView.as_view()))
 
 
 class LogoutView(ProfileMixin, LogMixin, View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         if 'SAMLRequest' in request.GET:
             return self.idp_logout(request)
         elif 'SAMLResponse' in request.GET:
@@ -581,6 +581,6 @@ class LogoutView(ProfileMixin, LogMixin, View):
 logout = LogoutView.as_view()
 
 
-def metadata(request):
+def metadata(request, **kwargs):
     metadata = utils.create_metadata(request)
     return HttpResponse(metadata, content_type='text/xml')
