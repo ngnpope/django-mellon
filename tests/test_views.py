@@ -25,12 +25,11 @@ import hashlib
 from httmock import HTTMock
 
 import django
+from django.urls import reverse
 from django.utils.encoding import force_text
 from django.utils.http import urlencode
 
 from xml_utils import assert_xml_constraints
-
-from mellon.compat import reverse
 
 from utils import error_500, html_response
 

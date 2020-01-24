@@ -38,11 +38,10 @@ ROOT_URLCONF = 'urls_tests'
 TEMPLATE_DIRS = [
     'tests/templates/',
 ]
-if django.VERSION >= (1, 8):
-    TEMPLATES = [
-        {
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'APP_DIRS': True,
-            'DIRS': TEMPLATE_DIRS,
-        },
-    ]
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'DIRS': TEMPLATE_DIRS,
+    },
+]

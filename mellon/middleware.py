@@ -17,14 +17,15 @@ from __future__ import unicode_literals
 
 from django.utils.http import urlencode
 from django.http import HttpResponseRedirect
+from django.utils.deprecation import MiddlewareMixin
+from django.urls import reverse
 
 from . import app_settings, utils
-from .compat import reverse, MiddlewareClass, is_authenticated
 
 PASSIVE_TRIED_COOKIE = 'MELLON_PASSIVE_TRIED'
 
 
-class PassiveAuthenticationMiddleware(MiddlewareClass):
+class PassiveAuthenticationMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         # When unlogged remove the PASSIVE_TRIED cookie
         if app_settings.OPENED_SESSION_COOKIE_NAME \
@@ -50,7 +51,7 @@ class PassiveAuthenticationMiddleware(MiddlewareClass):
             return
         if not app_settings.OPENED_SESSION_COOKIE_NAME:
             return
-        if hasattr(request, 'user') and is_authenticated(request.user):
+        if hasattr(request, 'user') and request.user.is_authenticated:
             return
         if PASSIVE_TRIED_COOKIE in request.COOKIES:
             return

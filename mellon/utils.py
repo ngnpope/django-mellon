@@ -25,13 +25,13 @@ from xml.parsers import expat
 import django
 from django.contrib import auth
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.timezone import make_aware, now, make_naive, is_aware, get_default_timezone
 from django.conf import settings
 from django.utils.six.moves.urllib.parse import urlparse
 import lasso
 
 from . import app_settings
-from .compat import reverse
 
 
 def create_metadata(request):

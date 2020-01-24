@@ -30,6 +30,7 @@ from django.contrib import auth
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, resolve_url
+from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils import six
 from django.utils.encoding import force_text
@@ -38,7 +39,6 @@ from django.db import transaction
 from django.utils.translation import ugettext as _
 
 from . import app_settings, utils
-from .compat import reverse, is_authenticated
 
 RETRY_LOGIN_COOKIE = 'MELLON_RETRY_LOGIN'
 
@@ -529,7 +529,7 @@ class LogoutView(ProfileMixin, LogMixin, View):
         next_url = request.GET.get(REDIRECT_FIELD_NAME)
         referer = request.META.get('HTTP_REFERER')
         if not referer or utils.same_origin(referer, request.build_absolute_uri()):
-            if hasattr(request, 'user') and is_authenticated(request.user):
+            if hasattr(request, 'user') and request.user.is_authenticated:
                 logout = None
                 try:
                     issuer = request.session.get('mellon_session', {}).get('issuer')
