@@ -369,7 +369,7 @@ class DefaultAdapter(object):
                 continue
             values = saml_attributes.get(saml_attribute)
             if not values:
-                logger.error('looking for user by saml attribute %r and user field %r, skipping because empty',
+                logger.warning('looking for user by saml attribute %r and user field %r, skipping because empty',
                              saml_attribute, user_field)
                 continue
             ignore_case = line.get('ignore-case', False)
